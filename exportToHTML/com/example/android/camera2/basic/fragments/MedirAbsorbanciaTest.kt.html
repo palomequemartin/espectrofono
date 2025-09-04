@@ -1,0 +1,1078 @@
+<html>
+<head>
+<title>MedirAbsorbanciaTest.kt</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cf8e6d;}
+.s1 { color: #bcbec4;}
+.s2 { color: #bcbec4;}
+.s3 { color: #7a7e85;}
+.s4 { color: #5f826b; font-style: italic;}
+.s5 { color: #6aab73;}
+.s6 { color: #2aacb8;}
+.s7 { color: #67a37c; font-style: italic;}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+MedirAbsorbanciaTest.kt</font>
+</center></td></tr></table>
+<pre><span class="s0">package </span><span class="s1">com</span><span class="s2">.</span><span class="s1">example</span><span class="s2">.</span><span class="s1">android</span><span class="s2">.</span><span class="s1">camera2</span><span class="s2">.</span><span class="s1">basic</span><span class="s2">.</span><span class="s1">fragments</span>
+
+
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">annotation</span><span class="s2">.</span><span class="s1">SuppressLint</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">content</span><span class="s2">.</span><span class="s1">Context</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">content</span><span class="s2">.</span><span class="s1">Intent</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">graphics</span><span class="s2">.*</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">graphics</span><span class="s2">.</span><span class="s1">drawable</span><span class="s2">.</span><span class="s1">BitmapDrawable</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">graphics</span><span class="s2">.</span><span class="s1">drawable</span><span class="s2">.</span><span class="s1">Drawable</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">hardware</span><span class="s2">.</span><span class="s1">Camera</span><span class="s2">.</span><span class="s1">Parameters</span><span class="s2">.</span><span class="s1">FOCUS_MODE_FIXED</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">hardware</span><span class="s2">.</span><span class="s1">camera2</span><span class="s2">.*</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">media</span><span class="s2">.</span><span class="s1">Image</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">media</span><span class="s2">.</span><span class="s1">ImageReader</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">os</span><span class="s2">.</span><span class="s1">Build</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">os</span><span class="s2">.</span><span class="s1">Bundle</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">os</span><span class="s2">.</span><span class="s1">Handler</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">os</span><span class="s2">.</span><span class="s1">HandlerThread</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">util</span><span class="s2">.</span><span class="s1">Log</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">view</span><span class="s2">.*</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">core</span><span class="s2">.</span><span class="s1">graphics</span><span class="s2">.</span><span class="s1">drawable</span><span class="s2">.</span><span class="s1">toDrawable</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">core</span><span class="s2">.</span><span class="s1">graphics</span><span class="s2">.</span><span class="s1">rotationMatrix</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">fragment</span><span class="s2">.</span><span class="s1">app</span><span class="s2">.</span><span class="s1">Fragment</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">lifecycle</span><span class="s2">.</span><span class="s1">Observer</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">lifecycle</span><span class="s2">.</span><span class="s1">lifecycleScope</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">navigation</span><span class="s2">.</span><span class="s1">NavController</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">navigation</span><span class="s2">.</span><span class="s1">Navigation</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">navigation</span><span class="s2">.</span><span class="s1">fragment</span><span class="s2">.</span><span class="s1">navArgs</span>
+<span class="s1">import com</span><span class="s2">.</span><span class="s1">example</span><span class="s2">.</span><span class="s1">android</span><span class="s2">.</span><span class="s1">camera</span><span class="s2">.</span><span class="s1">utils</span><span class="s2">.</span><span class="s1">AutoFitSurfaceView</span>
+<span class="s1">import com</span><span class="s2">.</span><span class="s1">example</span><span class="s2">.</span><span class="s1">android</span><span class="s2">.</span><span class="s1">camera</span><span class="s2">.</span><span class="s1">utils</span><span class="s2">.</span><span class="s1">OrientationLiveData</span>
+<span class="s1">import com</span><span class="s2">.</span><span class="s1">example</span><span class="s2">.</span><span class="s1">android</span><span class="s2">.</span><span class="s1">camera</span><span class="s2">.</span><span class="s1">utils</span><span class="s2">.</span><span class="s1">computeExifOrientation</span>
+<span class="s1">import com</span><span class="s2">.</span><span class="s1">example</span><span class="s2">.</span><span class="s1">android</span><span class="s2">.</span><span class="s1">camera</span><span class="s2">.</span><span class="s1">utils</span><span class="s2">.</span><span class="s1">getPreviewOutputSize</span>
+<span class="s1">import com</span><span class="s2">.</span><span class="s1">example</span><span class="s2">.</span><span class="s1">android</span><span class="s2">.</span><span class="s1">camera2</span><span class="s2">.</span><span class="s1">basic</span><span class="s2">.</span><span class="s1">CameraActivity</span>
+<span class="s1">import com</span><span class="s2">.</span><span class="s1">example</span><span class="s2">.</span><span class="s1">android</span><span class="s2">.</span><span class="s1">camera2</span><span class="s2">.</span><span class="s1">basic</span><span class="s2">.</span><span class="s1">R</span>
+<span class="s1">import com</span><span class="s2">.</span><span class="s1">example</span><span class="s2">.</span><span class="s1">calibrarlongituddeonda</span><span class="s2">.</span><span class="s1">Autorotar</span>
+<span class="s1">import java</span><span class="s2">.</span><span class="s1">text</span><span class="s2">.</span><span class="s1">SimpleDateFormat</span>
+<span class="s1">import java</span><span class="s2">.</span><span class="s1">util</span><span class="s2">.*</span>
+<span class="s1">import java</span><span class="s2">.</span><span class="s1">util</span><span class="s2">.</span><span class="s1">concurrent</span><span class="s2">.</span><span class="s1">ArrayBlockingQueue</span>
+<span class="s1">import java</span><span class="s2">.</span><span class="s1">util</span><span class="s2">.</span><span class="s1">concurrent</span><span class="s2">.</span><span class="s1">TimeoutException</span>
+<span class="s1">import kotlin</span><span class="s2">.</span><span class="s1">coroutines</span><span class="s2">.</span><span class="s1">resume</span>
+<span class="s1">import kotlin</span><span class="s2">.</span><span class="s1">coroutines</span><span class="s2">.</span><span class="s1">resumeWithException</span>
+<span class="s1">import kotlin</span><span class="s2">.</span><span class="s1">coroutines</span><span class="s2">.</span><span class="s1">suspendCoroutine</span>
+<span class="s1">import kotlin</span><span class="s2">.</span><span class="s1">math</span><span class="s2">.*</span>
+<span class="s1">import kotlin</span><span class="s2">.</span><span class="s1">properties</span><span class="s2">.</span><span class="s1">Delegates</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">hardware</span><span class="s2">.</span><span class="s1">camera2</span><span class="s2">.</span><span class="s1">CameraCharacteristics</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">hardware</span><span class="s2">.</span><span class="s1">camera2</span><span class="s2">.</span><span class="s1">CameraCharacteristics</span><span class="s2">.*</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">net</span><span class="s2">.</span><span class="s1">Uri</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">text</span><span class="s2">.</span><span class="s1">Layout</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">widget</span><span class="s2">.*</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">constraintlayout</span><span class="s2">.</span><span class="s1">widget</span><span class="s2">.</span><span class="s1">ConstraintLayout</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">core</span><span class="s2">.</span><span class="s1">content</span><span class="s2">.</span><span class="s1">ContentProviderCompat</span><span class="s2">.</span><span class="s1">requireContext</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">core</span><span class="s2">.</span><span class="s1">content</span><span class="s2">.</span><span class="s1">ContextCompat</span><span class="s2">.</span><span class="s1">startActivity</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">core</span><span class="s2">.</span><span class="s1">content</span><span class="s2">.</span><span class="s1">FileProvider</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">core</span><span class="s2">.</span><span class="s1">graphics</span><span class="s2">.</span><span class="s1">drawable</span><span class="s2">.</span><span class="s1">toAdaptiveIcon</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">core</span><span class="s2">.</span><span class="s1">graphics</span><span class="s2">.</span><span class="s1">red</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">core</span><span class="s2">.</span><span class="s1">view</span><span class="s2">.</span><span class="s1">isVisible</span>
+<span class="s3">//import kotlinx.android.synthetic.main.absorbancia_calib.*</span>
+<span class="s3">//import kotlinx.android.synthetic.main.fragment_camera.capture_button</span>
+<span class="s3">//import kotlinx.android.synthetic.main.fragment_medir_absorbancia_test.*</span>
+<span class="s1">import kotlinx</span><span class="s2">.</span><span class="s1">coroutines</span><span class="s2">.*</span>
+<span class="s1">import kotlin</span><span class="s2">.</span><span class="s1">coroutines</span><span class="s2">.</span><span class="s1">CoroutineContext</span>
+<span class="s1">import java</span><span class="s2">.</span><span class="s1">io</span><span class="s2">.*</span>
+<span class="s1">import java</span><span class="s2">.</span><span class="s1">lang</span><span class="s2">.</span><span class="s1">Math</span><span class="s2">.</span><span class="s1">pow</span>
+<span class="s1">import java</span><span class="s2">.</span><span class="s1">lang</span><span class="s2">.</span><span class="s1">Runnable</span>
+<span class="s1">import java</span><span class="s2">.</span><span class="s1">nio</span><span class="s2">.</span><span class="s1">ByteBuffer</span>
+
+<span class="s0">class </span><span class="s1">MedirAbsorbanciaTest : Fragment</span><span class="s2">() {</span>
+
+    <span class="s4">/** AndroidX navigation arguments */</span>
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">args: MedirAbsorbanciaTestArgs by navArgs</span><span class="s2">()</span>
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">canvasParaEditar: Canvas </span><span class="s3">//para enchular los bitmaps hay que hacer esto</span>
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">poneleColor: Paint </span><span class="s3">//para ponerle colores</span>
+    <span class="s1">private lateinit </span><span class="s0">var  </span><span class="s1">myBitmap: Bitmap</span>
+    <span class="s1">private lateinit </span><span class="s0">var  </span><span class="s1">prueba: Bitmap</span>
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">n by Delegates</span><span class="s2">.</span><span class="s1">notNull</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">m by Delegates</span><span class="s2">.</span><span class="s1">notNull</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+    <span class="s3">//var pixel by Delegates.notNull&lt;Int&gt;()</span>
+    <span class="s3">//var q by Delegates.notNull&lt;Int&gt;()</span>
+    <span class="s3">//lateinit var intensidades : MutableList&lt;Float&gt;</span>
+    <span class="s3">//var intensidadesMaximas = mutableListOf&lt;Float&gt;()</span>
+    <span class="s3">//var indicesDeMaximasIntensidades = mutableListOf&lt;List&lt;Int&gt;&gt;()</span>
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">activarBotonContinuar : Boolean </span><span class="s2">= </span><span class="s0">false</span>
+
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">listaConMetrica </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Float</span><span class="s2">&gt;()</span>
+    <span class="s1">lateinit </span><span class="s0">var </span><span class="s1">listaFinalIntensidadesRed : MutableList</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;</span>
+    <span class="s1">lateinit </span><span class="s0">var </span><span class="s1">listaFinalIntensidadesGreen : MutableList</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;</span>
+    <span class="s1">lateinit </span><span class="s0">var </span><span class="s1">listaFinalIntensidadesBlue : MutableList</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;</span>
+
+    <span class="s4">/** Host's navigation controller */</span>
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">navController: NavController by lazy </span><span class="s2">{</span>
+        <span class="s1">Navigation</span><span class="s2">.</span><span class="s1">findNavController</span><span class="s2">(</span><span class="s1">requireActivity</span><span class="s2">(), </span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">fragment_container</span><span class="s2">)</span>
+    <span class="s2">}</span>
+
+    <span class="s4">/** Detects, characterizes, and connects to a CameraDevice (used for all camera operations) */</span>
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">cameraManager: CameraManager by lazy </span><span class="s2">{</span>
+        <span class="s0">val </span><span class="s1">context </span><span class="s2">= </span><span class="s1">requireContext</span><span class="s2">().</span><span class="s1">applicationContext</span>
+        <span class="s1">context</span><span class="s2">.</span><span class="s1">getSystemService</span><span class="s2">(</span><span class="s1">Context</span><span class="s2">.</span><span class="s1">CAMERA_SERVICE</span><span class="s2">) </span><span class="s0">as </span><span class="s1">CameraManager</span>
+    <span class="s2">}</span>
+
+    <span class="s4">/** [CameraCharacteristics] corresponding to the provided Camera ID */</span>
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">characteristics: CameraCharacteristics by lazy </span><span class="s2">{</span>
+        <span class="s1">cameraManager</span><span class="s2">.</span><span class="s1">getCameraCharacteristics</span><span class="s2">(</span><span class="s1">args</span><span class="s2">.</span><span class="s1">cameraId</span><span class="s2">)</span>
+    <span class="s2">}</span>
+
+    <span class="s4">/** Readers used as buffers for camera still shots */</span>
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">imageReader: ImageReader</span>
+
+    <span class="s4">/** [HandlerThread] where all camera operations run */</span>
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">cameraThread </span><span class="s2">= </span><span class="s1">HandlerThread</span><span class="s2">(</span><span class="s5">&quot;CameraThread&quot;</span><span class="s2">).</span><span class="s1">apply </span><span class="s2">{ </span><span class="s1">start</span><span class="s2">() }</span>
+
+    <span class="s4">/** [Handler] corresponding to [cameraThread] */</span>
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">cameraHandler </span><span class="s2">= </span><span class="s1">Handler</span><span class="s2">(</span><span class="s1">cameraThread</span><span class="s2">.</span><span class="s1">looper</span><span class="s2">)</span>
+
+    <span class="s4">/** Performs recording animation of flashing screen */</span>
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">animationTask: Runnable by lazy </span><span class="s2">{</span>
+        <span class="s1">Runnable </span><span class="s2">{</span>
+            <span class="s3">// Flash white animation</span>
+            <span class="s1">overlay</span><span class="s2">.</span><span class="s1">background </span><span class="s2">= </span><span class="s1">Color</span><span class="s2">.</span><span class="s1">argb</span><span class="s2">(</span><span class="s6">150</span><span class="s2">, </span><span class="s6">255</span><span class="s2">, </span><span class="s6">255</span><span class="s2">, </span><span class="s6">255</span><span class="s2">).</span><span class="s1">toDrawable</span><span class="s2">()</span>
+            <span class="s3">// Wait for ANIMATION_FAST_MILLIS</span>
+            <span class="s1">overlay</span><span class="s2">.</span><span class="s1">postDelayed</span><span class="s2">({</span>
+                <span class="s3">// Remove white flash animation</span>
+                <span class="s1">overlay</span><span class="s2">.</span><span class="s1">background </span><span class="s2">= </span><span class="s0">null</span>
+            <span class="s2">}, </span><span class="s1">CameraActivity</span><span class="s2">.</span><span class="s1">ANIMATION_FAST_MILLIS</span><span class="s2">)</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+
+    <span class="s4">/** [HandlerThread] where all buffer reading operations run */</span>
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">imageReaderThread </span><span class="s2">= </span><span class="s1">HandlerThread</span><span class="s2">(</span><span class="s5">&quot;imageReaderThread&quot;</span><span class="s2">).</span><span class="s1">apply </span><span class="s2">{ </span><span class="s1">start</span><span class="s2">() }</span>
+
+    <span class="s4">/** [Handler] corresponding to [imageReaderThread] */</span>
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">imageReaderHandler </span><span class="s2">= </span><span class="s1">Handler</span><span class="s2">(</span><span class="s1">imageReaderThread</span><span class="s2">.</span><span class="s1">looper</span><span class="s2">)</span>
+
+    <span class="s4">/** Where the camera preview is displayed */</span>
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">viewFinder: AutoFitSurfaceView</span>
+
+    <span class="s4">/** Overlay on top of the camera preview */</span>
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">overlay: View</span>
+
+    <span class="s4">/** The [CameraDevice] that will be opened in this fragment */</span>
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">camera: CameraDevice</span>
+
+    <span class="s4">/** Internal reference to the ongoing [CameraCaptureSession] configured with our parameters */</span>
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">picturesSession: CameraCaptureSession</span>
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">previewSession: CameraCaptureSession</span>
+
+    <span class="s4">/** Live data listener for changes in the device orientation relative to the camera */</span>
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">relativeOrientation: OrientationLiveData</span>
+
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">captureRequestStillCapture: CaptureRequest</span><span class="s2">.</span><span class="s1">Builder</span>
+
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">captureRequestPreview: CaptureRequest</span><span class="s2">.</span><span class="s1">Builder</span>
+
+    <span class="s1">lateinit </span><span class="s0">var </span><span class="s1">buffer : ByteBuffer</span>
+    <span class="s1">lateinit </span><span class="s0">var </span><span class="s1">bytes : ByteArray</span>
+
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">progreso : Int </span><span class="s2">= </span><span class="s6">0</span>
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">mostrarProgreso : Boolean </span><span class="s2">= </span><span class="s0">false</span>
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">testMode </span><span class="s2">= </span><span class="s0">false</span>
+
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">N </span><span class="s2">= </span><span class="s6">1</span>
+
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">blueOrder1 </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Float</span><span class="s2">&gt;()</span>
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">blueOrder1IndexList : IntArray</span>
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">blueOrder2 </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Float</span><span class="s2">&gt;()</span>
+
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">redOrder1 </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Float</span><span class="s2">&gt;()</span>
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">redOrder1IndexList : IntArray</span>
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">redOrder2 </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Float</span><span class="s2">&gt;()</span>
+
+
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">greenOrder1 </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Float</span><span class="s2">&gt;()</span>
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">greenOrder1IndexList : IntArray</span>
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">greenOrder2 </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Float</span><span class="s2">&gt;()</span>
+
+
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">listaIndices </span><span class="s2">= </span><span class="s1">listOf</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">posicionEnXOrdenCero by Delegates</span><span class="s2">.</span><span class="s1">notNull</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">blueX1 : Int </span><span class="s2">= </span><span class="s6">0</span>
+
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">modoMonocromatico </span><span class="s2">= </span><span class="s0">false</span>
+
+    <span class="s1">private </span><span class="s0">var </span><span class="s1">previewExposureTime by Delegates</span><span class="s2">.</span><span class="s1">notNull</span><span class="s2">&lt;</span><span class="s1">Long</span><span class="s2">&gt;()</span>
+
+
+    <span class="s1">override </span><span class="s0">fun </span><span class="s1">onCreateView</span><span class="s2">(</span>
+        <span class="s1">inflater: LayoutInflater</span><span class="s2">,</span>
+        <span class="s1">container: ViewGroup?</span><span class="s2">,</span>
+        <span class="s1">savedInstanceState: Bundle?</span>
+    <span class="s2">)</span><span class="s1">: View? </span><span class="s2">= </span><span class="s1">inflater</span><span class="s2">.</span><span class="s1">inflate</span><span class="s2">(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">layout</span><span class="s2">.</span><span class="s1">fragment_medir_absorbancia_test</span><span class="s2">, </span><span class="s1">container</span><span class="s2">, </span><span class="s0">false</span><span class="s2">)</span>
+
+    <span class="s1">@SuppressLint</span><span class="s2">(</span><span class="s5">&quot;MissingPermission&quot;</span><span class="s2">)</span>
+    <span class="s1">override </span><span class="s0">fun </span><span class="s1">onViewCreated</span><span class="s2">(</span><span class="s1">view: View</span><span class="s2">, </span><span class="s1">savedInstanceState: Bundle?</span><span class="s2">) {</span>
+
+        <span class="s0">val </span><span class="s1">tmax </span><span class="s2">= </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">SENSOR_INFO_EXPOSURE_TIME_RANGE</span><span class="s2">)</span><span class="s1">?</span><span class="s2">.</span><span class="s1">upper ?: </span><span class="s6">10000L</span><span class="s2">*</span><span class="s6">1000000L</span>
+<span class="s3">//        val tmin = characteristics.get(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE)?.lower ?: 0</span>
+        <span class="s0">val </span><span class="s1">sensMin </span><span class="s2">= </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">SENSOR_INFO_SENSITIVITY_RANGE</span><span class="s2">)</span><span class="s1">?</span><span class="s2">.</span><span class="s1">lower ?: </span><span class="s6">0</span>
+        <span class="s0">val </span><span class="s1">sensMax </span><span class="s2">= </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">SENSOR_INFO_SENSITIVITY_RANGE</span><span class="s2">)</span><span class="s1">?</span><span class="s2">.</span><span class="s1">upper ?: </span><span class="s6">100000</span>
+<span class="s3">//        val sens = (sensMin + (sensMax-sensMin)*0.2).toInt()</span>
+<span class="s3">//        val minimumFocusDistance : Float = characteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE) ?: 0f</span>
+        <span class="s0">val </span><span class="s1">exposureTime: Long </span><span class="s2">= </span><span class="s1">args</span><span class="s2">.</span><span class="s1">exposureTime</span>
+        <span class="s0">val </span><span class="s1">numberOfPictures: Int </span><span class="s2">= </span><span class="s1">args</span><span class="s2">.</span><span class="s1">numberOfPictures</span>
+        <span class="s0">val </span><span class="s1">sensitivity: Int </span><span class="s2">= </span><span class="s1">args</span><span class="s2">.</span><span class="s1">sensitivity</span>
+<span class="s3">//        val dimensions = characteristics.get(SCALER_STREAM_CONFIGURATION_MAP)!!.getOutputSizes(args.pixelFormat)</span>
+<span class="s3">//        val h = dimensions[0].height</span>
+<span class="s3">//        val w = dimensions[0].width</span>
+
+        <span class="s4">/** --------- Interface elements -----------**/</span>
+        <span class="s0">super</span><span class="s2">.</span><span class="s1">onViewCreated</span><span class="s2">(</span><span class="s1">view</span><span class="s2">, </span><span class="s1">savedInstanceState</span><span class="s2">)</span>
+        <span class="s1">overlay </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">overlay</span><span class="s2">)</span>
+        <span class="s1">viewFinder </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">view_finder</span><span class="s2">)</span>
+        <span class="s0">var </span><span class="s1">botonContinuar : ImageButton </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">botonContinuar</span><span class="s2">)</span>
+        <span class="s0">val </span><span class="s1">barraProgreso : ProgressBar </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">progressBar</span><span class="s2">)</span>
+        <span class="s1">barraProgreso</span><span class="s2">.</span><span class="s1">isVisible </span><span class="s2">= </span><span class="s0">false</span>
+        <span class="s0">val </span><span class="s1">textoProgreso : TextView </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">textoProgreso</span><span class="s2">)</span>
+        <span class="s1">textoProgreso</span><span class="s2">.</span><span class="s1">isVisible</span><span class="s2">=</span><span class="s0">false</span>
+        <span class="s0">val </span><span class="s1">captureButton : ImageButton </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">capture_button</span><span class="s2">)</span>
+        <span class="s4">/**--------------------------------------**/</span>
+
+
+        <span class="s4">/** --------- Set preview size -----------**/</span>
+        <span class="s0">val </span><span class="s1">previewSize </span><span class="s2">= </span><span class="s1">getPreviewOutputSize</span><span class="s2">(</span><span class="s1">viewFinder</span><span class="s2">.</span><span class="s1">display</span><span class="s2">, </span><span class="s1">characteristics</span><span class="s2">, </span><span class="s1">SurfaceHolder::</span><span class="s0">class</span><span class="s2">.</span><span class="s1">java</span><span class="s2">)</span>
+        <span class="s1">viewFinder</span><span class="s2">.</span><span class="s1">setAspectRatio</span><span class="s2">(</span><span class="s1">previewSize</span><span class="s2">.</span><span class="s1">width</span><span class="s2">, </span><span class="s1">previewSize</span><span class="s2">.</span><span class="s1">height</span><span class="s2">)</span>
+        <span class="s4">/**--------------------------------------**/</span>
+
+        <span class="s4">/** --------- Set layout orientation -----------**/</span>
+        <span class="s0">val </span><span class="s1">layoutmedirabstest : View </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">layoutmedirabstest</span><span class="s2">)</span>
+        <span class="s1">relativeOrientation </span><span class="s2">= </span><span class="s1">OrientationLiveData</span><span class="s2">(</span><span class="s1">requireContext</span><span class="s2">(), </span><span class="s1">characteristics</span><span class="s2">).</span><span class="s1">apply </span><span class="s2">{</span>
+            <span class="s1">observe</span><span class="s2">(</span><span class="s1">viewLifecycleOwner</span><span class="s2">, </span><span class="s1">Observer </span><span class="s2">{</span>
+                    <span class="s1">orientation </span><span class="s2">-&gt; </span><span class="s1">layoutmedirabstest</span><span class="s2">.</span><span class="s1">rotation </span><span class="s2">= </span><span class="s1">orientationFunction</span><span class="s2">(</span><span class="s1">orientation</span><span class="s2">).</span><span class="s1">toFloat</span><span class="s2">()</span>
+            <span class="s2">})</span>
+        <span class="s2">}</span>
+        <span class="s4">/**-------------Open camera and first preview session-------------**/</span>
+        <span class="s3">//var previewExposureTime = 12*1e6.toLong()</span>
+        <span class="s1">previewExposureTime </span><span class="s2">= </span><span class="s1">tmax</span>
+        <span class="s1">openDevice</span><span class="s2">(</span><span class="s1">previewExposureTime</span><span class="s2">,</span><span class="s1">sensitivity</span><span class="s2">)</span>
+
+        <span class="s4">/** --------- Botones -----------**/</span>
+        <span class="s1">botonContinuar</span><span class="s2">.</span><span class="s1">setOnClickListener </span><span class="s2">{</span>
+            <span class="s0">if </span><span class="s2">(</span><span class="s1">activarBotonContinuar</span><span class="s2">) {</span>
+                <span class="s1">Navigation</span><span class="s2">.</span><span class="s1">findNavController</span><span class="s2">(</span><span class="s1">requireActivity</span><span class="s2">(), </span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">fragment_container</span><span class="s2">).</span><span class="s1">navigate</span><span class="s2">(</span>
+                    <span class="s1">MedirAbsorbanciaTestDirections</span><span class="s2">.</span><span class="s1">actionMedirAbsorbanciaTestToCaptura</span><span class="s2">(</span>
+                        <span class="s1">prueba</span><span class="s2">,</span><span class="s1">args</span><span class="s2">.</span><span class="s1">cameraId</span><span class="s2">,</span><span class="s1">blueOrder1</span><span class="s2">.</span><span class="s1">toFloatArray</span><span class="s2">(),</span>
+                        <span class="s1">redOrder1</span><span class="s2">.</span><span class="s1">toFloatArray</span><span class="s2">(), </span><span class="s1">greenOrder1</span><span class="s2">.</span><span class="s1">toFloatArray</span><span class="s2">(),</span>
+                            <span class="s1">blueOrder2</span><span class="s2">.</span><span class="s1">toFloatArray</span><span class="s2">(), </span><span class="s1">redOrder2</span><span class="s2">.</span><span class="s1">toFloatArray</span><span class="s2">(),</span>
+                            <span class="s1">greenOrder2</span><span class="s2">.</span><span class="s1">toFloatArray</span><span class="s2">(),</span><span class="s1">listaConMetrica</span><span class="s2">.</span><span class="s1">toFloatArray</span><span class="s2">(),</span>
+                            <span class="s1">posicionEnXOrdenCero</span><span class="s2">,</span><span class="s1">blueX1</span>
+                    <span class="s2">)</span>
+                <span class="s2">)</span>
+            <span class="s2">}</span>
+            <span class="s0">else </span><span class="s2">{</span>
+                <span class="s1">Toast</span><span class="s2">.</span><span class="s1">makeText</span><span class="s2">(</span><span class="s1">activity</span><span class="s2">,</span><span class="s5">&quot;Tome las fotos primero&quot;</span><span class="s2">,</span><span class="s1">Toast</span><span class="s2">.</span><span class="s1">LENGTH_SHORT</span><span class="s2">).</span><span class="s1">show</span><span class="s2">()</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+
+        <span class="s1">captureButton</span><span class="s2">.</span><span class="s1">setOnClickListener </span><span class="s2">{</span>
+                <span class="s1">script</span><span class="s2">(</span><span class="s1">barraProgreso</span><span class="s2">,</span><span class="s1">textoProgreso</span><span class="s2">,</span><span class="s1">captureButton</span><span class="s2">,</span><span class="s1">exposureTime</span><span class="s2">,</span><span class="s1">numberOfPictures</span><span class="s2">,</span><span class="s1">sensitivity</span><span class="s2">)</span>
+        <span class="s2">}</span>
+
+    <span class="s2">}</span>
+
+    <span class="s1">private </span><span class="s0">fun </span><span class="s1">script</span><span class="s2">(</span><span class="s1">barraProgreso:ProgressBar</span><span class="s2">,</span><span class="s1">textoProgreso:TextView</span><span class="s2">,</span><span class="s1">captureButton : ImageButton</span><span class="s2">,</span><span class="s1">exposureTime: Long</span><span class="s2">,</span><span class="s1">numberOfPictures: Int</span><span class="s2">,</span><span class="s1">sensitivity: Int</span><span class="s2">) = </span><span class="s1">GlobalScope</span><span class="s2">.</span><span class="s1">launch</span><span class="s2">(</span><span class="s1">Dispatchers</span><span class="s2">.</span><span class="s1">IO</span><span class="s2">) {</span>
+
+        <span class="s1">withContext </span><span class="s2">(</span><span class="s1">Dispatchers</span><span class="s2">.</span><span class="s1">Main</span><span class="s2">) {</span>
+            <span class="s1">captureButton</span><span class="s2">.</span><span class="s1">isEnabled </span><span class="s2">= </span><span class="s0">false</span>
+            <span class="s1">barraProgreso</span><span class="s2">.</span><span class="s1">isVisible </span><span class="s2">= </span><span class="s0">true</span>
+            <span class="s1">barraProgreso</span><span class="s2">.</span><span class="s1">isIndeterminate </span><span class="s2">= </span><span class="s0">true</span>
+            <span class="s1">textoProgreso</span><span class="s2">.</span><span class="s1">isVisible </span><span class="s2">= </span><span class="s0">true</span>
+        <span class="s2">}</span>
+
+        <span class="s0">val </span><span class="s1">tmax </span><span class="s2">= </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">SENSOR_INFO_EXPOSURE_TIME_RANGE</span><span class="s2">)</span><span class="s1">?</span><span class="s2">.</span><span class="s1">upper ?: </span><span class="s6">0</span>
+        <span class="s0">val </span><span class="s1">tmin </span><span class="s2">= </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">SENSOR_INFO_EXPOSURE_TIME_RANGE</span><span class="s2">)</span><span class="s1">?</span><span class="s2">.</span><span class="s1">lower ?: </span><span class="s6">0</span>
+        <span class="s0">val </span><span class="s1">sensMin </span><span class="s2">= </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">SENSOR_INFO_SENSITIVITY_RANGE</span><span class="s2">)</span><span class="s1">?</span><span class="s2">.</span><span class="s1">lower ?: </span><span class="s6">0</span>
+        <span class="s0">val </span><span class="s1">sensMax </span><span class="s2">= </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">SENSOR_INFO_SENSITIVITY_RANGE</span><span class="s2">)</span><span class="s1">?</span><span class="s2">.</span><span class="s1">upper ?: </span><span class="s6">0</span>
+<span class="s3">//        val sens = (sensMin + (sensMax-sensMin)*0.2).toInt()</span>
+        <span class="s0">val </span><span class="s1">minimumFocusDistance : Float </span><span class="s2">= </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">LENS_INFO_MINIMUM_FOCUS_DISTANCE</span><span class="s2">) </span><span class="s1">?: </span><span class="s6">0f</span>
+        <span class="s0">val </span><span class="s1">dimensions </span><span class="s2">= </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">SCALER_STREAM_CONFIGURATION_MAP</span><span class="s2">)!!.</span><span class="s1">getOutputSizes</span><span class="s2">(</span><span class="s1">args</span><span class="s2">.</span><span class="s1">pixelFormat</span><span class="s2">)</span>
+        <span class="s0">val </span><span class="s1">h </span><span class="s2">= </span><span class="s1">dimensions</span><span class="s2">[</span><span class="s6">0</span><span class="s2">].</span><span class="s1">height</span>
+        <span class="s0">val </span><span class="s1">w </span><span class="s2">= </span><span class="s1">dimensions</span><span class="s2">[</span><span class="s6">0</span><span class="s2">].</span><span class="s1">width</span>
+
+        <span class="s0">var </span><span class="s1">autorotar : Autorotar</span>
+        <span class="s0">var </span><span class="s1">m : DoubleArray </span><span class="s2">= </span><span class="s1">DoubleArray</span><span class="s2">(</span><span class="s6">0</span><span class="s2">)</span>
+        <span class="s0">var </span><span class="s1">listaMaximosX : MutableList</span><span class="s2">&lt;</span><span class="s1">Double</span><span class="s2">&gt; = </span><span class="s1">MutableList</span><span class="s2">&lt;</span><span class="s1">Double</span><span class="s2">&gt;(</span><span class="s6">0</span><span class="s2">,{</span><span class="s1">i: Int</span><span class="s2">-&gt; </span><span class="s6">0.0</span><span class="s2">})</span>
+        <span class="s0">var </span><span class="s1">listaMaximosY : MutableList</span><span class="s2">&lt;</span><span class="s1">Double</span><span class="s2">&gt; = </span><span class="s1">MutableList</span><span class="s2">&lt;</span><span class="s1">Double</span><span class="s2">&gt;(</span><span class="s6">0</span><span class="s2">,{</span><span class="s1">i: Int</span><span class="s2">-&gt; </span><span class="s6">0.0</span><span class="s2">})</span>
+        <span class="s0">var </span><span class="s1">tita </span><span class="s2">= </span><span class="s6">0f</span>
+        <span class="s0">var </span><span class="s1">titaRad : Double</span>
+        <span class="s0">var </span><span class="s1">xo </span><span class="s2">= </span><span class="s6">0</span>
+        <span class="s0">var </span><span class="s1">y0 : Float</span>
+        <span class="s0">var </span><span class="s1">x0 : Float</span>
+
+        <span class="s0">var </span><span class="s1">listaXRectaAjuste </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+        <span class="s0">val </span><span class="s1">listaYRectaAjuste </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+
+        <span class="s3">//val radioPromedios = 5f*h.toFloat()*w.toFloat()/12e6f</span>
+        <span class="s0">val </span><span class="s1">radioPromedios </span><span class="s2">= </span><span class="s6">0</span>
+        <span class="s0">val </span><span class="s1">rangoOrdenCero </span><span class="s2">= </span><span class="s6">500</span>
+
+        <span class="s4">/**--------------------------------------------------------------------------**/</span>
+        <span class="s4">/** Encontrando la recta      **/</span>
+        <span class="s4">/**--------------------------------------------------------------------------**/</span>
+
+        <span class="s1">withContext</span><span class="s2">(</span><span class="s1">Dispatchers</span><span class="s2">.</span><span class="s1">Main</span><span class="s2">){</span>
+            <span class="s1">textoProgreso</span><span class="s2">.</span><span class="s1">text</span><span class="s2">=</span><span class="s5">&quot;Detectando recta&quot;</span>
+        <span class="s2">}</span>
+
+        <span class="s1">imageReader </span><span class="s2">= </span><span class="s1">ImageReader</span><span class="s2">.</span><span class="s1">newInstance</span><span class="s2">(</span><span class="s1">w</span><span class="s2">, </span><span class="s1">h</span><span class="s2">, </span><span class="s1">args</span><span class="s2">.</span><span class="s1">pixelFormat</span><span class="s2">, </span><span class="s6">1</span><span class="s2">)</span>
+
+        <span class="s1">previewSession</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+        <span class="s1">delay</span><span class="s2">(</span><span class="s6">500L</span><span class="s2">)</span>
+        <span class="s1">makePreviewSession</span><span class="s2">(</span><span class="s1">tmax</span><span class="s2">,</span><span class="s1">sensitivity</span><span class="s2">)</span>
+        <span class="s1">delay</span><span class="s2">(</span><span class="s6">500L</span><span class="s2">)</span>
+        <span class="s1">previewSession</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+        <span class="s1">delay</span><span class="s2">(</span><span class="s6">500L</span><span class="s2">)</span>
+        <span class="s1">picturesSession </span><span class="s2">= </span><span class="s1">createCaptureSession</span><span class="s2">(</span><span class="s1">camera</span><span class="s2">, </span><span class="s1">listOf</span><span class="s2">(</span><span class="s1">imageReader</span><span class="s2">.</span><span class="s1">surface</span><span class="s2">), </span><span class="s1">cameraHandler</span><span class="s2">)</span>
+        <span class="s1">takePhoto</span><span class="s2">(</span><span class="s1">tmax</span><span class="s2">,</span><span class="s1">sensitivity</span><span class="s2">,</span><span class="s1">minimumFocusDistance</span><span class="s2">,</span><span class="s1">picturesSession</span><span class="s2">).</span><span class="s1">use</span><span class="s2">{ </span><span class="s1">result </span><span class="s2">-&gt;</span>
+            <span class="s1">buffer </span><span class="s2">= </span><span class="s1">result</span><span class="s2">.</span><span class="s1">image</span><span class="s2">.</span><span class="s1">planes</span><span class="s2">[</span><span class="s6">0</span><span class="s2">].</span><span class="s1">buffer</span>
+            <span class="s1">bytes </span><span class="s2">= </span><span class="s1">ByteArray</span><span class="s2">(</span><span class="s1">buffer</span><span class="s2">.</span><span class="s1">remaining</span><span class="s2">()).</span><span class="s1">apply </span><span class="s2">{</span><span class="s1">buffer</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s0">this</span><span class="s2">)}</span>
+            <span class="s1">myBitmap </span><span class="s2">= </span><span class="s1">BitmapFactory</span><span class="s2">.</span><span class="s1">decodeByteArray</span><span class="s2">(</span><span class="s1">bytes</span><span class="s2">, </span><span class="s6">0</span><span class="s2">, </span><span class="s1">bytes</span><span class="s2">.</span><span class="s1">size</span><span class="s2">)</span>
+            <span class="s1">result</span><span class="s2">.</span><span class="s1">image</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+            <span class="s1">picturesSession</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+            <span class="s1">makePreviewSession</span><span class="s2">(</span><span class="s1">previewExposureTime</span><span class="s2">,</span><span class="s1">sensitivity</span><span class="s2">)</span>
+
+            <span class="s0">if </span><span class="s2">(</span><span class="s1">testMode</span><span class="s2">==</span><span class="s0">true</span><span class="s2">) {</span>
+                <span class="s1">m </span><span class="s2">= </span><span class="s1">doubleArrayOf</span><span class="s2">((</span><span class="s1">h</span><span class="s2">/</span><span class="s6">2f</span><span class="s2">).</span><span class="s1">toDouble</span><span class="s2">(),</span><span class="s6">0</span><span class="s2">.</span><span class="s1">toDouble</span><span class="s2">())</span>
+            <span class="s2">}</span>
+            <span class="s1">autorotar </span><span class="s2">= </span><span class="s1">Autorotar</span><span class="s2">(</span><span class="s1">myBitmap</span><span class="s2">)</span>
+
+            <span class="s0">try</span>
+            <span class="s2">{</span>
+                <span class="s1">autorotar</span><span class="s2">.</span><span class="s1">encontrarRecta</span><span class="s2">()</span>
+                <span class="s1">m </span><span class="s2">= </span><span class="s1">autorotar</span><span class="s2">.</span><span class="s1">m</span><span class="s2">!!</span>
+                <span class="s1">listaMaximosX </span><span class="s2">= </span><span class="s1">autorotar</span><span class="s2">.</span><span class="s1">listaMaximosX</span><span class="s2">!!</span>
+                <span class="s1">listaMaximosY </span><span class="s2">= </span><span class="s1">autorotar</span><span class="s2">.</span><span class="s1">listaMaximosY</span><span class="s2">!!</span>
+                <span class="s1">posicionEnXOrdenCero </span><span class="s2">= </span><span class="s1">autorotar</span><span class="s2">.</span><span class="s1">posicionEnXOrdenCero?: </span><span class="s6">0</span>
+                <span class="s1">tita </span><span class="s2">= </span><span class="s1">autorotar</span><span class="s2">.</span><span class="s1">tita</span><span class="s2">!!.</span><span class="s1">toFloat</span><span class="s2">()</span>
+                <span class="s1">titaRad </span><span class="s2">= </span><span class="s1">tita </span><span class="s2">/ </span><span class="s6">180 </span><span class="s2">* </span><span class="s1">kotlin</span><span class="s2">.</span><span class="s1">math</span><span class="s2">.</span><span class="s1">PI</span>
+                <span class="s0">for </span><span class="s2">(</span><span class="s1">k </span><span class="s0">in </span><span class="s1">radioPromedios</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">() </span><span class="s1">until posicionEnXOrdenCero</span><span class="s2">-</span><span class="s6">200</span><span class="s2">) {</span>
+                    <span class="s1">listaXRectaAjuste</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">k</span><span class="s2">)</span>
+                    <span class="s1">listaYRectaAjuste</span><span class="s2">.</span><span class="s1">add</span><span class="s2">((</span><span class="s1">k </span><span class="s2">* </span><span class="s1">m</span><span class="s2">[</span><span class="s6">1</span><span class="s2">] + </span><span class="s1">m</span><span class="s2">[</span><span class="s6">0</span><span class="s2">]).</span><span class="s1">toInt</span><span class="s2">())</span>
+                <span class="s2">}</span>
+
+                <span class="s1">prueba </span><span class="s2">= </span><span class="s1">myBitmap</span><span class="s2">.</span><span class="s1">copy</span><span class="s2">(</span><span class="s1">myBitmap</span><span class="s2">.</span><span class="s1">getConfig</span><span class="s2">(), </span><span class="s0">true</span><span class="s2">)</span>
+                <span class="s0">for </span><span class="s2">(</span><span class="s1">i </span><span class="s0">in </span><span class="s6">0 </span><span class="s1">until prueba</span><span class="s2">.</span><span class="s1">width</span><span class="s2">) {</span>
+                    <span class="s3">//println(&quot;i =  &quot;+i)</span>
+                    <span class="s0">var </span><span class="s1">j </span><span class="s2">= (</span><span class="s1">m</span><span class="s2">[</span><span class="s6">1</span><span class="s2">] * </span><span class="s1">i </span><span class="s2">+ </span><span class="s1">m</span><span class="s2">[</span><span class="s6">0</span><span class="s2">]).</span><span class="s1">toInt</span><span class="s2">()</span>
+                    <span class="s1">prueba</span><span class="s2">.</span><span class="s1">setPixel</span><span class="s2">(</span><span class="s1">i</span><span class="s2">, </span><span class="s1">j</span><span class="s2">, </span><span class="s1">Color</span><span class="s2">.</span><span class="s1">rgb</span><span class="s2">(</span><span class="s6">255</span><span class="s2">, </span><span class="s6">255</span><span class="s2">, </span><span class="s6">255</span><span class="s2">))</span>
+                <span class="s2">}</span>
+                <span class="s0">for </span><span class="s2">(</span><span class="s1">m </span><span class="s0">in </span><span class="s6">0 </span><span class="s1">until listaMaximosX</span><span class="s2">.</span><span class="s1">size</span><span class="s2">) {</span>
+                    <span class="s0">var </span><span class="s1">i </span><span class="s2">= </span><span class="s1">listaMaximosX</span><span class="s2">[</span><span class="s1">m</span><span class="s2">].</span><span class="s1">toInt</span><span class="s2">()</span>
+                    <span class="s0">var </span><span class="s1">j </span><span class="s2">= </span><span class="s1">listaMaximosY</span><span class="s2">[</span><span class="s1">m</span><span class="s2">].</span><span class="s1">toInt</span><span class="s2">()</span>
+                    <span class="s0">for </span><span class="s2">(</span><span class="s1">k </span><span class="s0">in </span><span class="s2">-</span><span class="s6">5</span><span class="s2">..</span><span class="s6">5</span><span class="s2">) {</span>
+                        <span class="s0">for </span><span class="s2">(</span><span class="s1">l </span><span class="s0">in </span><span class="s2">-</span><span class="s6">5</span><span class="s2">..</span><span class="s6">5</span><span class="s2">) {</span>
+                            <span class="s1">prueba</span><span class="s2">.</span><span class="s1">setPixel</span><span class="s2">(</span><span class="s1">i </span><span class="s2">+ </span><span class="s1">k</span><span class="s2">, </span><span class="s1">j </span><span class="s2">+ </span><span class="s1">l</span><span class="s2">, </span><span class="s1">Color</span><span class="s2">.</span><span class="s1">rgb</span><span class="s2">(</span><span class="s6">255</span><span class="s2">, </span><span class="s6">0</span><span class="s2">, </span><span class="s6">0</span><span class="s2">))</span>
+                        <span class="s2">}</span>
+                    <span class="s2">}</span>
+                <span class="s2">}</span>
+                <span class="s0">var </span><span class="s1">i </span><span class="s2">= </span><span class="s1">posicionEnXOrdenCero</span>
+                <span class="s0">var </span><span class="s1">j </span><span class="s2">= (</span><span class="s1">m</span><span class="s2">[</span><span class="s6">1</span><span class="s2">] * </span><span class="s1">i </span><span class="s2">+ </span><span class="s1">m</span><span class="s2">[</span><span class="s6">0</span><span class="s2">]).</span><span class="s1">toInt</span><span class="s2">()</span>
+                <span class="s0">for </span><span class="s2">(</span><span class="s1">k </span><span class="s0">in </span><span class="s2">-</span><span class="s6">10</span><span class="s2">..</span><span class="s6">10</span><span class="s2">) {</span>
+                    <span class="s0">for </span><span class="s2">(</span><span class="s1">l </span><span class="s0">in </span><span class="s2">-</span><span class="s6">10</span><span class="s2">..</span><span class="s6">10</span><span class="s2">) {</span>
+                        <span class="s1">prueba</span><span class="s2">.</span><span class="s1">setPixel</span><span class="s2">(</span><span class="s1">i </span><span class="s2">+ </span><span class="s1">k</span><span class="s2">, </span><span class="s1">j </span><span class="s2">+ </span><span class="s1">l</span><span class="s2">, </span><span class="s1">Color</span><span class="s2">.</span><span class="s1">rgb</span><span class="s2">(</span><span class="s6">255</span><span class="s2">, </span><span class="s6">0</span><span class="s2">, </span><span class="s6">255</span><span class="s2">))</span>
+                    <span class="s2">}</span>
+                <span class="s2">}</span>
+            <span class="s2">}</span>
+            <span class="s1">catch </span><span class="s2">(</span><span class="s1">e: Exception</span><span class="s2">)</span>
+            <span class="s2">{</span>
+                <span class="s1">withContext</span><span class="s2">(</span><span class="s1">Dispatchers</span><span class="s2">.</span><span class="s1">Main</span><span class="s2">){</span>
+                    <span class="s1">textoProgreso</span><span class="s2">.</span><span class="s1">isVisible </span><span class="s2">= </span><span class="s0">false</span>
+                    <span class="s1">activarBotonContinuar </span><span class="s2">= </span><span class="s0">true</span>
+                    <span class="s1">captureButton</span><span class="s2">.</span><span class="s1">isEnabled </span><span class="s2">= </span><span class="s0">true</span>
+                    <span class="s1">barraProgreso</span><span class="s2">.</span><span class="s1">isVisible </span><span class="s2">= </span><span class="s0">false</span>
+                    <span class="s1">Toast</span><span class="s2">.</span><span class="s1">makeText</span><span class="s2">(</span><span class="s1">activity</span><span class="s2">,</span><span class="s5">&quot;Error al encontrar la recta&quot;</span><span class="s2">,</span><span class="s1">Toast</span><span class="s2">.</span><span class="s1">LENGTH_SHORT</span><span class="s2">).</span><span class="s1">show</span><span class="s2">()</span>
+                <span class="s2">}</span>
+                <span class="s0">this</span><span class="s2">.</span><span class="s1">cancel</span><span class="s2">()</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+
+
+        <span class="s4">/**--------------------------------------------------------------------------**/</span>
+        <span class="s4">/** Recta encontrada     **/</span>
+        <span class="s4">/**--------------------------------------------------------------------------**/</span>
+
+        <span class="s0">var </span><span class="s1">n0 </span><span class="s2">= </span><span class="s6">1</span>
+        <span class="s0">val </span><span class="s1">tolerancia </span><span class="s2">= </span><span class="s6">1</span>
+        <span class="s0">val </span><span class="s1">normalizacion</span><span class="s2">= (</span><span class="s6">2</span><span class="s2">*</span><span class="s1">radioPromedios </span><span class="s2">+ </span><span class="s6">1</span><span class="s2">).</span><span class="s1">toDouble</span><span class="s2">().</span><span class="s1">pow</span><span class="s2">(</span><span class="s6">2.0</span><span class="s2">).</span><span class="s1">toFloat</span><span class="s2">()</span>
+
+        <span class="s0">var </span><span class="s1">redX1 : Int </span><span class="s2">= </span><span class="s6">0</span>
+        <span class="s0">var </span><span class="s1">greenX1 : Int </span><span class="s2">= </span><span class="s6">0</span>
+
+        <span class="s0">var </span><span class="s1">t1 </span><span class="s2">= </span><span class="s1">tmin</span>
+        <span class="s0">var </span><span class="s1">t2 </span><span class="s2">= (</span><span class="s1">tmax</span><span class="s2">).</span><span class="s1">toLong</span><span class="s2">()</span>
+        <span class="s0">var </span><span class="s1">t </span><span class="s2">= </span><span class="s6">0L</span>
+
+        <span class="s0">var </span><span class="s1">nB </span><span class="s2">= </span><span class="s6">0</span>
+        <span class="s0">var </span><span class="s1">nR </span><span class="s2">= </span><span class="s6">0</span>
+        <span class="s0">var </span><span class="s1">nG </span><span class="s2">= </span><span class="s6">0</span>
+
+        <span class="s1">withContext</span><span class="s2">(</span><span class="s1">Dispatchers</span><span class="s2">.</span><span class="s1">Main</span><span class="s2">){</span>
+            <span class="s1">textoProgreso</span><span class="s2">.</span><span class="s1">text</span><span class="s2">=</span><span class="s5">&quot;Buscando primer </span><span class="s0">\n </span><span class="s5">orden difractivo&quot;</span>
+        <span class="s2">}</span>
+
+        <span class="s4">/**--------------------------------------------------------------------------**/</span>
+        <span class="s4">/** Buscando primer orden de difraccíon     **/</span>
+        <span class="s4">/**--------------------------------------------------------------------------**/</span>
+
+        <span class="s0">var </span><span class="s1">Q </span><span class="s2">= </span><span class="s6">0</span>
+        <span class="s0">while </span><span class="s2">(</span><span class="s1">n0 </span><span class="s2">&lt;= </span><span class="s1">tolerancia</span><span class="s2">) {</span>
+<span class="s3">//            t=((t1+t2)/2).toLong()</span>
+<span class="s3">//            println(&quot;tiempo exp  &quot;+t/(1e6))</span>
+<span class="s3">//            println(&quot; valor de int  &quot;+Q)</span>
+            <span class="s0">var </span><span class="s1">blueTest </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+            <span class="s0">var </span><span class="s1">redTest </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+            <span class="s0">var </span><span class="s1">greenTest </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+            <span class="s1">previewSession</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+            <span class="s1">delay</span><span class="s2">(</span><span class="s6">500L</span><span class="s2">)</span>
+            <span class="s1">picturesSession </span><span class="s2">= </span><span class="s1">createCaptureSession</span><span class="s2">(</span><span class="s1">camera</span><span class="s2">, </span><span class="s1">listOf</span><span class="s2">(</span><span class="s1">imageReader</span><span class="s2">.</span><span class="s1">surface</span><span class="s2">), </span><span class="s1">cameraHandler</span><span class="s2">)</span>
+            <span class="s1">takePhoto</span><span class="s2">(</span><span class="s1">previewExposureTime</span><span class="s2">,</span><span class="s1">sensitivity</span><span class="s2">,</span><span class="s1">minimumFocusDistance</span><span class="s2">,</span><span class="s1">picturesSession</span><span class="s2">).</span><span class="s1">use</span><span class="s2">{ </span><span class="s1">result </span><span class="s2">-&gt;</span>
+                <span class="s1">buffer </span><span class="s2">= </span><span class="s1">result</span><span class="s2">.</span><span class="s1">image</span><span class="s2">.</span><span class="s1">planes</span><span class="s2">[</span><span class="s6">0</span><span class="s2">].</span><span class="s1">buffer</span>
+                <span class="s1">bytes </span><span class="s2">= </span><span class="s1">ByteArray</span><span class="s2">(</span><span class="s1">buffer</span><span class="s2">.</span><span class="s1">remaining</span><span class="s2">()).</span><span class="s1">apply </span><span class="s2">{</span><span class="s1">buffer</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s0">this</span><span class="s2">)}</span>
+                <span class="s1">myBitmap </span><span class="s2">= </span><span class="s1">BitmapFactory</span><span class="s2">.</span><span class="s1">decodeByteArray</span><span class="s2">(</span><span class="s1">bytes</span><span class="s2">, </span><span class="s6">0</span><span class="s2">, </span><span class="s1">bytes</span><span class="s2">.</span><span class="s1">size</span><span class="s2">)</span>
+                <span class="s1">result</span><span class="s2">.</span><span class="s1">image</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+                <span class="s1">picturesSession</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+                <span class="s1">makePreviewSession</span><span class="s2">(</span><span class="s1">previewExposureTime</span><span class="s2">,</span><span class="s1">sensitivity</span><span class="s2">)</span>
+                <span class="s0">for </span><span class="s2">(</span><span class="s1">n </span><span class="s0">in </span><span class="s6">0 </span><span class="s1">until listaXRectaAjuste</span><span class="s2">.</span><span class="s1">lastIndex</span><span class="s2">) {</span>
+                    <span class="s0">var </span><span class="s1">i0 </span><span class="s2">= </span><span class="s1">listaXRectaAjuste</span><span class="s2">[</span><span class="s1">n</span><span class="s2">]</span>
+                    <span class="s0">var </span><span class="s1">j0 </span><span class="s2">= </span><span class="s1">listaYRectaAjuste</span><span class="s2">[</span><span class="s1">n</span><span class="s2">]</span>
+                    <span class="s0">var </span><span class="s1">r </span><span class="s2">= </span><span class="s6">0f</span>
+                    <span class="s0">var </span><span class="s1">g </span><span class="s2">= </span><span class="s6">0f</span>
+                    <span class="s0">var </span><span class="s1">b </span><span class="s2">= </span><span class="s6">0f</span>
+                    <span class="s0">for </span><span class="s2">(</span><span class="s1">i </span><span class="s0">in </span><span class="s1">i0 </span><span class="s2">- </span><span class="s1">radioPromedios</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()..</span><span class="s1">i0 </span><span class="s2">+ </span><span class="s1">radioPromedios</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()) {</span>
+                        <span class="s0">for </span><span class="s2">(</span><span class="s1">j </span><span class="s0">in </span><span class="s1">j0 </span><span class="s2">- </span><span class="s1">radioPromedios</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()..</span><span class="s1">j0 </span><span class="s2">+ </span><span class="s1">radioPromedios</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()) {</span>
+                            <span class="s0">var </span><span class="s1">aargb </span><span class="s2">= </span><span class="s1">myBitmap</span><span class="s2">.</span><span class="s1">getPixel</span><span class="s2">(</span><span class="s1">i</span><span class="s2">, </span><span class="s1">j</span><span class="s2">)</span>
+                            <span class="s1">r </span><span class="s2">+= </span><span class="s1">Color</span><span class="s2">.</span><span class="s1">red</span><span class="s2">(</span><span class="s1">aargb</span><span class="s2">).</span><span class="s1">toFloat</span><span class="s2">() / </span><span class="s1">normalizacion</span>
+                            <span class="s1">g </span><span class="s2">+= </span><span class="s1">Color</span><span class="s2">.</span><span class="s1">green</span><span class="s2">(</span><span class="s1">aargb</span><span class="s2">).</span><span class="s1">toFloat</span><span class="s2">() / </span><span class="s1">normalizacion</span>
+                            <span class="s1">b </span><span class="s2">+= </span><span class="s1">Color</span><span class="s2">.</span><span class="s1">blue</span><span class="s2">(</span><span class="s1">aargb</span><span class="s2">).</span><span class="s1">toFloat</span><span class="s2">() / </span><span class="s1">normalizacion</span>
+                        <span class="s2">}</span>
+                    <span class="s2">}</span>
+                    <span class="s1">blueTest</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">b</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">())</span>
+                    <span class="s1">redTest</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">r</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">())</span>
+                    <span class="s1">greenTest</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">g</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">())</span>
+                <span class="s2">}</span>
+                <span class="s1">encontrarMaximo</span><span class="s2">(</span><span class="s1">blueTest</span><span class="s2">).</span><span class="s1">run</span><span class="s2">{</span>
+                    <span class="s1">Q</span><span class="s2">=</span><span class="s0">this</span><span class="s2">[</span><span class="s6">0</span><span class="s2">]</span>
+                    <span class="s1">nB</span><span class="s2">=</span><span class="s1">listaXRectaAjuste</span><span class="s2">[</span><span class="s0">this</span><span class="s2">[</span><span class="s6">1</span><span class="s2">]]</span>
+                <span class="s2">}</span>
+
+                <span class="s1">n0 </span><span class="s2">+= </span><span class="s6">1</span>
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">Q</span><span class="s2">&lt;</span><span class="s6">250</span><span class="s2">) {</span>
+                    <span class="s1">t1</span><span class="s2">=</span><span class="s1">t</span><span class="s2">.</span><span class="s1">toLong</span><span class="s2">()</span>
+                <span class="s2">} </span><span class="s0">else </span><span class="s2">{</span>
+                    <span class="s1">t2</span><span class="s2">=</span><span class="s1">t</span><span class="s2">.</span><span class="s1">toLong</span><span class="s2">()</span>
+                <span class="s2">}</span>
+                <span class="s1">println</span><span class="s2">(</span><span class="s5">&quot;BLUE  &quot;</span><span class="s2">+</span><span class="s1">blueTest</span><span class="s2">)</span>
+                <span class="s1">println</span><span class="s2">(</span><span class="s5">&quot;INDICES  &quot;</span><span class="s2">+</span><span class="s1">listaXRectaAjuste</span><span class="s2">)</span>
+            <span class="s2">}</span>
+
+        <span class="s2">}</span>
+
+        <span class="s1">withContext</span><span class="s2">(</span><span class="s1">Dispatchers</span><span class="s2">.</span><span class="s1">Main</span><span class="s2">){</span>
+            <span class="s1">textoProgreso</span><span class="s2">.</span><span class="s1">text</span><span class="s2">=</span><span class="s5">&quot;Generando posiciones </span><span class="s0">\n </span><span class="s5">en píxeles&quot;</span>
+        <span class="s2">}</span>
+
+        <span class="s1">blueX1 </span><span class="s2">= </span><span class="s1">nB</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()</span>
+        <span class="s1">redX1 </span><span class="s2">= </span><span class="s1">nR</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()</span>
+        <span class="s1">greenX1 </span><span class="s2">= </span><span class="s1">nG</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()</span>
+        <span class="s1">println</span><span class="s2">(</span><span class="s5">&quot;POSICION ORDEN CERO  &quot;</span><span class="s2">+</span><span class="s1">posicionEnXOrdenCero</span><span class="s2">)</span>
+        <span class="s1">println</span><span class="s2">(</span><span class="s5">&quot;MAXIMO ORDEN 1 RED  &quot;</span><span class="s2">+</span><span class="s1">redX1</span><span class="s2">)</span>
+        <span class="s1">println</span><span class="s2">(</span><span class="s5">&quot;MAXIMO ORDEN 1 BLUE  &quot;</span><span class="s2">+</span><span class="s1">blueX1</span><span class="s2">)</span>
+        <span class="s1">println</span><span class="s2">(</span><span class="s5">&quot;MAXIMO ORDEN 1 GREEN  &quot;</span><span class="s2">+</span><span class="s1">greenX1</span><span class="s2">)</span>
+        <span class="s0">var </span><span class="s1">i </span><span class="s2">= </span><span class="s1">blueX1</span>
+        <span class="s0">for </span><span class="s2">(</span><span class="s1">j </span><span class="s0">in </span><span class="s2">(</span><span class="s1">h</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">()/</span><span class="s6">3f</span><span class="s2">).</span><span class="s1">toInt</span><span class="s2">() </span><span class="s1">until </span><span class="s2">(</span><span class="s6">2f</span><span class="s2">*</span><span class="s1">h</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">()/</span><span class="s6">3f</span><span class="s2">).</span><span class="s1">toInt</span><span class="s2">()) {</span>
+            <span class="s0">for </span><span class="s2">(</span><span class="s1">k </span><span class="s0">in </span><span class="s2">-</span><span class="s6">10</span><span class="s2">..</span><span class="s6">10</span><span class="s2">) {</span>
+                <span class="s0">for </span><span class="s2">(</span><span class="s1">l </span><span class="s0">in </span><span class="s2">-</span><span class="s6">10</span><span class="s2">..</span><span class="s6">10</span><span class="s2">) {</span>
+                    <span class="s1">prueba</span><span class="s2">.</span><span class="s1">setPixel</span><span class="s2">(</span><span class="s1">i </span><span class="s2">+ </span><span class="s1">k</span><span class="s2">, </span><span class="s1">j </span><span class="s2">+ </span><span class="s1">l</span><span class="s2">, </span><span class="s1">Color</span><span class="s2">.</span><span class="s1">rgb</span><span class="s2">(</span><span class="s6">255</span><span class="s2">, </span><span class="s6">255</span><span class="s2">, </span><span class="s6">255</span><span class="s2">))</span>
+                <span class="s2">}</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+
+        <span class="s0">val </span><span class="s1">redLeft </span><span class="s2">= </span><span class="s1">redX1</span><span class="s2">-</span><span class="s6">0.5</span><span class="s2">*</span><span class="s1">abs</span><span class="s2">(</span><span class="s1">posicionEnXOrdenCero</span><span class="s2">-</span><span class="s1">redX1</span><span class="s2">)</span>
+        <span class="s0">val </span><span class="s1">leftLimit : Int </span><span class="s2">= (</span><span class="s1">heavisideTheta</span><span class="s2">(</span><span class="s1">redLeft</span><span class="s2">-</span><span class="s1">radioPromedios</span><span class="s2">)*</span><span class="s1">redLeft</span><span class="s2">+</span><span class="s1">heavisideTheta</span><span class="s2">(</span><span class="s1">radioPromedios</span><span class="s2">-</span><span class="s1">redLeft</span><span class="s2">)*</span><span class="s1">radioPromedios</span><span class="s2">).</span><span class="s1">toInt</span><span class="s2">()</span>
+        <span class="s0">val </span><span class="s1">blueRight </span><span class="s2">= </span><span class="s1">blueX1</span><span class="s2">+</span><span class="s6">0.5</span><span class="s2">*</span><span class="s1">abs</span><span class="s2">(</span><span class="s1">posicionEnXOrdenCero</span><span class="s2">-</span><span class="s1">blueX1</span><span class="s2">)</span>
+        <span class="s0">val </span><span class="s1">rightLimit </span><span class="s2">= (</span><span class="s1">heavisideTheta</span><span class="s2">(</span><span class="s1">posicionEnXOrdenCero</span><span class="s2">-</span><span class="s6">200</span><span class="s2">-</span><span class="s1">blueRight</span><span class="s2">)*</span><span class="s1">blueRight</span><span class="s2">+</span><span class="s1">heavisideTheta</span><span class="s2">(-</span><span class="s1">posicionEnXOrdenCero</span><span class="s2">+</span><span class="s6">200</span><span class="s2">+</span><span class="s1">blueRight</span><span class="s2">)*(</span><span class="s1">posicionEnXOrdenCero</span><span class="s2">-</span><span class="s6">200</span><span class="s2">)).</span><span class="s1">toInt</span><span class="s2">()</span>
+
+        <span class="s1">listaIndices </span><span class="s2">= (</span><span class="s1">leftLimit until rightLimit</span><span class="s2">).</span><span class="s1">toList</span><span class="s2">()</span>
+
+        <span class="s1">launch </span><span class="s2">{</span>
+            <span class="s0">val </span><span class="s1">metric </span><span class="s2">= </span><span class="s1">sqrt</span><span class="s2">(</span><span class="s6">1 </span><span class="s2">+ </span><span class="s1">pow</span><span class="s2">(</span><span class="s1">m</span><span class="s2">[</span><span class="s6">1</span><span class="s2">], </span><span class="s6">2.0</span><span class="s2">))</span>
+            <span class="s0">for </span><span class="s2">(</span><span class="s1">i </span><span class="s0">in </span><span class="s6">0 </span><span class="s1">until listaIndices</span><span class="s2">.</span><span class="s1">size</span><span class="s2">) {</span>
+                <span class="s1">listaConMetrica</span><span class="s2">.</span><span class="s1">add</span><span class="s2">((</span><span class="s1">i </span><span class="s2">* </span><span class="s1">metric </span><span class="s2">+ </span><span class="s1">listaIndices</span><span class="s2">[</span><span class="s6">0</span><span class="s2">]).</span><span class="s1">toFloat</span><span class="s2">())</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+
+<span class="s3">//        withContext(Dispatchers.Main){</span>
+<span class="s3">//            textoProgreso.text=&quot;Generando perfiles \n de intensidad&quot;</span>
+<span class="s3">//        }</span>
+        <span class="s0">var </span><span class="s1">L </span><span class="s2">= </span><span class="s1">listaIndices</span><span class="s2">.</span><span class="s1">size</span>
+        <span class="s1">redOrder1 </span><span class="s2">= </span><span class="s1">zeros</span><span class="s2">(</span><span class="s1">L</span><span class="s2">)</span>
+        <span class="s1">greenOrder1 </span><span class="s2">= </span><span class="s1">zeros</span><span class="s2">(</span><span class="s1">L</span><span class="s2">)</span>
+        <span class="s1">blueOrder1 </span><span class="s2">= </span><span class="s1">zeros</span><span class="s2">(</span><span class="s1">L</span><span class="s2">)</span>
+        <span class="s1">redOrder2 </span><span class="s2">= </span><span class="s1">zeros</span><span class="s2">(</span><span class="s1">L</span><span class="s2">)</span>
+        <span class="s1">greenOrder2 </span><span class="s2">= </span><span class="s1">zeros</span><span class="s2">(</span><span class="s1">L</span><span class="s2">)</span>
+        <span class="s1">blueOrder2 </span><span class="s2">= </span><span class="s1">zeros</span><span class="s2">(</span><span class="s1">L</span><span class="s2">)</span>
+
+        <span class="s4">/**--------------------------------------------------------------------------**/</span>
+        <span class="s4">/** Tomando fotos en vacío **/</span>
+        <span class="s4">/**--------------------------------------------------------------------------**/</span>
+
+        <span class="s1">withContext</span><span class="s2">(</span><span class="s1">Dispatchers</span><span class="s2">.</span><span class="s1">Main</span><span class="s2">){</span>
+            <span class="s1">textoProgreso</span><span class="s2">.</span><span class="s1">text</span><span class="s2">=</span><span class="s5">&quot;Fotos en vacío&quot;</span>
+        <span class="s2">}</span>
+
+        <span class="s1">previewSession</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+        <span class="s1">makePreviewSession</span><span class="s2">(</span><span class="s1">exposureTime</span><span class="s2">,</span><span class="s1">sensitivity</span><span class="s2">)</span>
+        <span class="s1">delay</span><span class="s2">(</span><span class="s6">500L</span><span class="s2">)</span>
+        <span class="s1">previewSession</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+        <span class="s1">delay</span><span class="s2">(</span><span class="s6">500L</span><span class="s2">)</span>
+        <span class="s0">var </span><span class="s1">progress </span><span class="s2">= </span><span class="s6">0f</span>
+        <span class="s1">repeat</span><span class="s2">(</span><span class="s1">numberOfPictures</span><span class="s2">) {</span>
+            <span class="s1">picturesSession </span><span class="s2">= </span><span class="s1">createCaptureSession</span><span class="s2">(</span><span class="s1">camera</span><span class="s2">, </span><span class="s1">listOf</span><span class="s2">(</span><span class="s1">imageReader</span><span class="s2">.</span><span class="s1">surface</span><span class="s2">), </span><span class="s1">cameraHandler</span><span class="s2">)</span>
+            <span class="s1">takePhoto</span><span class="s2">(</span><span class="s1">exposureTime</span><span class="s2">, </span><span class="s1">sensitivity</span><span class="s2">, </span><span class="s1">minimumFocusDistance</span><span class="s2">, </span><span class="s1">picturesSession</span><span class="s2">).</span><span class="s1">use </span><span class="s2">{ </span><span class="s1">result </span><span class="s2">-&gt;</span>
+                <span class="s1">buffer </span><span class="s2">= </span><span class="s1">result</span><span class="s2">.</span><span class="s1">image</span><span class="s2">.</span><span class="s1">planes</span><span class="s2">[</span><span class="s6">0</span><span class="s2">].</span><span class="s1">buffer</span>
+                <span class="s1">bytes </span><span class="s2">= </span><span class="s1">ByteArray</span><span class="s2">(</span><span class="s1">buffer</span><span class="s2">.</span><span class="s1">remaining</span><span class="s2">()).</span><span class="s1">apply </span><span class="s2">{ </span><span class="s1">buffer</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s0">this</span><span class="s2">) }</span>
+                <span class="s1">myBitmap </span><span class="s2">= </span><span class="s1">BitmapFactory</span><span class="s2">.</span><span class="s1">decodeByteArray</span><span class="s2">(</span><span class="s1">bytes</span><span class="s2">, </span><span class="s6">0</span><span class="s2">, </span><span class="s1">bytes</span><span class="s2">.</span><span class="s1">size</span><span class="s2">)</span>
+                <span class="s1">result</span><span class="s2">.</span><span class="s1">image</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+                <span class="s1">picturesSession</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+
+                <span class="s0">for </span><span class="s2">(</span><span class="s1">n </span><span class="s0">in </span><span class="s1">listaIndices</span><span class="s2">.</span><span class="s1">indices</span><span class="s2">) {</span>
+                    <span class="s0">var </span><span class="s1">i0 </span><span class="s2">= </span><span class="s1">listaIndices</span><span class="s2">[</span><span class="s1">n</span><span class="s2">].</span><span class="s1">toInt</span><span class="s2">()</span>
+                    <span class="s0">var </span><span class="s1">j0 </span><span class="s2">= (</span><span class="s1">listaIndices</span><span class="s2">[</span><span class="s1">n</span><span class="s2">] * </span><span class="s1">m</span><span class="s2">[</span><span class="s6">1</span><span class="s2">] + </span><span class="s1">m</span><span class="s2">[</span><span class="s6">0</span><span class="s2">]).</span><span class="s1">toInt</span><span class="s2">()</span>
+                    <span class="s0">var </span><span class="s1">r </span><span class="s2">= </span><span class="s6">0f</span>
+                    <span class="s0">var </span><span class="s1">g </span><span class="s2">= </span><span class="s6">0f</span>
+                    <span class="s0">var </span><span class="s1">b </span><span class="s2">= </span><span class="s6">0f</span>
+                    <span class="s0">for </span><span class="s2">(</span><span class="s1">i </span><span class="s0">in </span><span class="s1">i0 </span><span class="s2">- </span><span class="s1">radioPromedios</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()..</span><span class="s1">i0 </span><span class="s2">+ </span><span class="s1">radioPromedios</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()) {</span>
+                        <span class="s0">for </span><span class="s2">(</span><span class="s1">j </span><span class="s0">in </span><span class="s1">j0 </span><span class="s2">- </span><span class="s1">radioPromedios</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()..</span><span class="s1">j0 </span><span class="s2">+ </span><span class="s1">radioPromedios</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()) {</span>
+                            <span class="s0">var </span><span class="s1">aargb </span><span class="s2">= </span><span class="s1">myBitmap</span><span class="s2">.</span><span class="s1">getPixel</span><span class="s2">(</span><span class="s1">i</span><span class="s2">, </span><span class="s1">j</span><span class="s2">)</span>
+                            <span class="s1">r </span><span class="s2">+= </span><span class="s1">Color</span><span class="s2">.</span><span class="s1">red</span><span class="s2">(</span><span class="s1">aargb</span><span class="s2">).</span><span class="s1">toFloat</span><span class="s2">() / </span><span class="s1">normalizacion</span>
+                            <span class="s1">g </span><span class="s2">+= </span><span class="s1">Color</span><span class="s2">.</span><span class="s1">green</span><span class="s2">(</span><span class="s1">aargb</span><span class="s2">).</span><span class="s1">toFloat</span><span class="s2">() / </span><span class="s1">normalizacion</span>
+                            <span class="s1">b </span><span class="s2">+= </span><span class="s1">Color</span><span class="s2">.</span><span class="s1">blue</span><span class="s2">(</span><span class="s1">aargb</span><span class="s2">).</span><span class="s1">toFloat</span><span class="s2">() / </span><span class="s1">normalizacion</span>
+                        <span class="s2">}</span>
+                    <span class="s2">}</span>
+                    <span class="s1">redOrder1</span><span class="s2">[</span><span class="s1">n</span><span class="s2">]+= </span><span class="s1">r</span><span class="s2">/</span><span class="s6">255f</span><span class="s2">/</span><span class="s1">N</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">()</span>
+                    <span class="s1">greenOrder1</span><span class="s2">[</span><span class="s1">n</span><span class="s2">]+= </span><span class="s1">g</span><span class="s2">/</span><span class="s6">255f</span><span class="s2">/</span><span class="s1">N</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">()</span>
+                    <span class="s1">blueOrder1</span><span class="s2">[</span><span class="s1">n</span><span class="s2">]+= </span><span class="s1">b</span><span class="s2">/</span><span class="s6">255f</span><span class="s2">/</span><span class="s1">N</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">()</span>
+                <span class="s2">}</span>
+
+                <span class="s1">progress</span><span class="s2">+=</span><span class="s6">1f</span><span class="s2">/</span><span class="s1">N</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">()*</span><span class="s6">100f</span>
+                <span class="s1">withContext</span><span class="s2">(</span><span class="s1">Dispatchers</span><span class="s2">.</span><span class="s1">Main</span><span class="s2">){</span>
+                    <span class="s1">textoProgreso</span><span class="s2">.</span><span class="s1">text</span><span class="s2">=</span><span class="s5">&quot;Progreso &quot;</span><span class="s2">+</span><span class="s1">String</span><span class="s2">.</span><span class="s1">format</span><span class="s2">(</span><span class="s5">&quot;%.1f&quot;</span><span class="s2">, </span><span class="s1">progress</span><span class="s2">)+</span><span class="s5">&quot;%&quot;</span>
+                <span class="s2">}</span>
+
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+        <span class="s1">makePreviewSession</span><span class="s2">(</span><span class="s1">exposureTime</span><span class="s2">,</span><span class="s1">sensitivity</span><span class="s2">)</span>
+
+        <span class="s1">withContext</span><span class="s2">(</span><span class="s1">Dispatchers</span><span class="s2">.</span><span class="s1">Main</span><span class="s2">){</span>
+            <span class="s1">textoProgreso</span><span class="s2">.</span><span class="s1">text</span><span class="s2">=</span><span class="s5">&quot;Poner muestra&quot;</span>
+        <span class="s2">}</span>
+
+        <span class="s1">delay</span><span class="s2">(</span><span class="s6">7000L</span><span class="s2">)</span>
+
+        <span class="s4">/**--------------------------------------------------------------------------**/</span>
+        <span class="s4">/** Tomando fotos con muestra **/</span>
+        <span class="s4">/**--------------------------------------------------------------------------**/</span>
+
+        <span class="s1">withContext</span><span class="s2">(</span><span class="s1">Dispatchers</span><span class="s2">.</span><span class="s1">Main</span><span class="s2">){</span>
+            <span class="s1">textoProgreso</span><span class="s2">.</span><span class="s1">text</span><span class="s2">=</span><span class="s5">&quot;Foto con muestra&quot;</span>
+        <span class="s2">}</span>
+
+        <span class="s1">previewSession</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+<span class="s3">//        makePreviewSession(exposureTime,sens)</span>
+<span class="s3">//        previewSession.close()</span>
+        <span class="s1">delay</span><span class="s2">(</span><span class="s6">500L</span><span class="s2">)</span>
+        <span class="s1">progress </span><span class="s2">= </span><span class="s6">0f</span>
+        <span class="s1">repeat</span><span class="s2">(</span><span class="s1">numberOfPictures</span><span class="s2">) {</span>
+            <span class="s1">picturesSession </span><span class="s2">= </span><span class="s1">createCaptureSession</span><span class="s2">(</span><span class="s1">camera</span><span class="s2">, </span><span class="s1">listOf</span><span class="s2">(</span><span class="s1">imageReader</span><span class="s2">.</span><span class="s1">surface</span><span class="s2">), </span><span class="s1">cameraHandler</span><span class="s2">)</span>
+            <span class="s1">takePhoto</span><span class="s2">(</span><span class="s1">exposureTime</span><span class="s2">, </span><span class="s1">sensitivity</span><span class="s2">, </span><span class="s1">minimumFocusDistance</span><span class="s2">, </span><span class="s1">picturesSession</span><span class="s2">).</span><span class="s1">use </span><span class="s2">{ </span><span class="s1">result </span><span class="s2">-&gt;</span>
+                <span class="s1">buffer </span><span class="s2">= </span><span class="s1">result</span><span class="s2">.</span><span class="s1">image</span><span class="s2">.</span><span class="s1">planes</span><span class="s2">[</span><span class="s6">0</span><span class="s2">].</span><span class="s1">buffer</span>
+                <span class="s1">bytes </span><span class="s2">= </span><span class="s1">ByteArray</span><span class="s2">(</span><span class="s1">buffer</span><span class="s2">.</span><span class="s1">remaining</span><span class="s2">()).</span><span class="s1">apply </span><span class="s2">{ </span><span class="s1">buffer</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s0">this</span><span class="s2">) }</span>
+                <span class="s1">myBitmap </span><span class="s2">= </span><span class="s1">BitmapFactory</span><span class="s2">.</span><span class="s1">decodeByteArray</span><span class="s2">(</span><span class="s1">bytes</span><span class="s2">, </span><span class="s6">0</span><span class="s2">, </span><span class="s1">bytes</span><span class="s2">.</span><span class="s1">size</span><span class="s2">)</span>
+                <span class="s1">result</span><span class="s2">.</span><span class="s1">image</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+                <span class="s1">picturesSession</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+
+                <span class="s0">for </span><span class="s2">(</span><span class="s1">n </span><span class="s0">in </span><span class="s1">listaIndices</span><span class="s2">.</span><span class="s1">indices</span><span class="s2">) {</span>
+                    <span class="s0">var </span><span class="s1">i0 </span><span class="s2">= </span><span class="s1">listaIndices</span><span class="s2">[</span><span class="s1">n</span><span class="s2">].</span><span class="s1">toInt</span><span class="s2">()</span>
+                    <span class="s0">var </span><span class="s1">j0 </span><span class="s2">= (</span><span class="s1">listaIndices</span><span class="s2">[</span><span class="s1">n</span><span class="s2">] * </span><span class="s1">m</span><span class="s2">[</span><span class="s6">1</span><span class="s2">] + </span><span class="s1">m</span><span class="s2">[</span><span class="s6">0</span><span class="s2">]).</span><span class="s1">toInt</span><span class="s2">()</span>
+                    <span class="s0">var </span><span class="s1">r </span><span class="s2">= </span><span class="s6">0f</span>
+                    <span class="s0">var </span><span class="s1">g </span><span class="s2">= </span><span class="s6">0f</span>
+                    <span class="s0">var </span><span class="s1">b </span><span class="s2">= </span><span class="s6">0f</span>
+                    <span class="s0">for </span><span class="s2">(</span><span class="s1">i </span><span class="s0">in </span><span class="s1">i0 </span><span class="s2">- </span><span class="s1">radioPromedios</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()..</span><span class="s1">i0 </span><span class="s2">+ </span><span class="s1">radioPromedios</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()) {</span>
+                        <span class="s0">for </span><span class="s2">(</span><span class="s1">j </span><span class="s0">in </span><span class="s1">j0 </span><span class="s2">- </span><span class="s1">radioPromedios</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()..</span><span class="s1">j0 </span><span class="s2">+ </span><span class="s1">radioPromedios</span><span class="s2">.</span><span class="s1">toInt</span><span class="s2">()) {</span>
+                            <span class="s0">var </span><span class="s1">aargb </span><span class="s2">= </span><span class="s1">myBitmap</span><span class="s2">.</span><span class="s1">getPixel</span><span class="s2">(</span><span class="s1">i</span><span class="s2">, </span><span class="s1">j</span><span class="s2">)</span>
+                            <span class="s1">r </span><span class="s2">+= </span><span class="s1">Color</span><span class="s2">.</span><span class="s1">red</span><span class="s2">(</span><span class="s1">aargb</span><span class="s2">).</span><span class="s1">toFloat</span><span class="s2">() / </span><span class="s1">normalizacion</span>
+                            <span class="s1">g </span><span class="s2">+= </span><span class="s1">Color</span><span class="s2">.</span><span class="s1">green</span><span class="s2">(</span><span class="s1">aargb</span><span class="s2">).</span><span class="s1">toFloat</span><span class="s2">() / </span><span class="s1">normalizacion</span>
+                            <span class="s1">b </span><span class="s2">+= </span><span class="s1">Color</span><span class="s2">.</span><span class="s1">blue</span><span class="s2">(</span><span class="s1">aargb</span><span class="s2">).</span><span class="s1">toFloat</span><span class="s2">() / </span><span class="s1">normalizacion</span>
+                        <span class="s2">}</span>
+                    <span class="s2">}</span>
+                    <span class="s1">redOrder2</span><span class="s2">[</span><span class="s1">n</span><span class="s2">]+= </span><span class="s1">r</span><span class="s2">/</span><span class="s6">255f</span><span class="s2">/</span><span class="s1">N</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">()</span>
+                    <span class="s1">greenOrder2</span><span class="s2">[</span><span class="s1">n</span><span class="s2">]+= </span><span class="s1">g</span><span class="s2">/</span><span class="s6">255f</span><span class="s2">/</span><span class="s1">N</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">()</span>
+                    <span class="s1">blueOrder2</span><span class="s2">[</span><span class="s1">n</span><span class="s2">]+= </span><span class="s1">b</span><span class="s2">/</span><span class="s6">255f</span><span class="s2">/</span><span class="s1">N</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">()</span>
+                <span class="s2">}</span>
+
+                <span class="s1">progress</span><span class="s2">+=</span><span class="s6">1f</span><span class="s2">/</span><span class="s1">N</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">()*</span><span class="s6">100f</span>
+                <span class="s1">withContext</span><span class="s2">(</span><span class="s1">Dispatchers</span><span class="s2">.</span><span class="s1">Main</span><span class="s2">){</span>
+                    <span class="s1">textoProgreso</span><span class="s2">.</span><span class="s1">text</span><span class="s2">=</span><span class="s5">&quot;Progreso &quot;</span><span class="s2">+</span><span class="s1">String</span><span class="s2">.</span><span class="s1">format</span><span class="s2">(</span><span class="s5">&quot;%.1f&quot;</span><span class="s2">, </span><span class="s1">progress</span><span class="s2">)+</span><span class="s5">&quot;%&quot;</span>
+                <span class="s2">}</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+
+        <span class="s1">makePreviewSession</span><span class="s2">(</span><span class="s1">previewExposureTime</span><span class="s2">,</span><span class="s1">sensitivity</span><span class="s2">)</span>
+
+
+
+        <span class="s1">withContext</span><span class="s2">(</span><span class="s1">Dispatchers</span><span class="s2">.</span><span class="s1">Main</span><span class="s2">){</span>
+            <span class="s1">textoProgreso</span><span class="s2">.</span><span class="s1">isVisible </span><span class="s2">= </span><span class="s0">false</span>
+            <span class="s1">activarBotonContinuar </span><span class="s2">= </span><span class="s0">true</span>
+            <span class="s1">captureButton</span><span class="s2">.</span><span class="s1">isEnabled </span><span class="s2">= </span><span class="s0">true</span>
+            <span class="s1">barraProgreso</span><span class="s2">.</span><span class="s1">isVisible </span><span class="s2">= </span><span class="s0">false</span>
+        <span class="s2">}</span>
+
+<span class="s3">//        println(&quot;ULTIMO AZUL &quot;+blueOrder1IndexList.last())</span>
+<span class="s3">//        println(&quot;ULTIMO VERDE &quot;+greenOrder1IndexList.last())</span>
+<span class="s3">//        println(&quot;ULTIMO ROJO &quot;+redOrder1IndexList.last())</span>
+<span class="s3">//        println(&quot;PREVIEW EXP TIME  &quot;+previewExposureTime/1e6)</span>
+    <span class="s2">}</span>
+
+
+    <span class="s1">@SuppressLint</span><span class="s2">(</span><span class="s5">&quot;MissingPermission&quot;</span><span class="s2">)</span>
+    <span class="s1">private </span><span class="s0">fun </span><span class="s1">openDevice</span><span class="s2">(</span><span class="s1">exposureTime: Long</span><span class="s2">, </span><span class="s1">sensitivity: Int</span><span class="s2">) = </span><span class="s1">lifecycleScope</span><span class="s2">.</span><span class="s1">launch</span><span class="s2">(</span><span class="s1">Dispatchers</span><span class="s2">.</span><span class="s1">IO</span><span class="s2">) {</span>
+
+        <span class="s1">camera </span><span class="s2">= </span><span class="s1">openCamera</span><span class="s2">(</span><span class="s1">cameraManager</span><span class="s2">, </span><span class="s1">args</span><span class="s2">.</span><span class="s1">cameraId</span><span class="s2">, </span><span class="s1">cameraHandler</span><span class="s2">)</span>
+        <span class="s1">previewSession </span><span class="s2">= </span><span class="s1">createCaptureSession</span><span class="s2">(</span><span class="s1">camera</span><span class="s2">, </span><span class="s1">listOf</span><span class="s2">(</span><span class="s1">viewFinder</span><span class="s2">.</span><span class="s1">holder</span><span class="s2">.</span><span class="s1">surface</span><span class="s2">), </span><span class="s1">cameraHandler</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview </span><span class="s2">= </span><span class="s1">camera</span><span class="s2">.</span><span class="s1">createCaptureRequest</span><span class="s2">(</span><span class="s1">CameraDevice</span><span class="s2">.</span><span class="s1">TEMPLATE_PREVIEW</span><span class="s2">).</span><span class="s1">apply </span><span class="s2">{ </span><span class="s1">addTarget</span><span class="s2">(</span><span class="s1">viewFinder</span><span class="s2">.</span><span class="s1">holder</span><span class="s2">.</span><span class="s1">surface</span><span class="s2">) }</span>
+
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AE_MODE</span><span class="s2">, </span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AE_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AF_MODE</span><span class="s2">, </span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AF_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">BLACK_LEVEL_LOCK</span><span class="s2">, </span><span class="s0">true</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">COLOR_CORRECTION_ABERRATION_MODE</span><span class="s2">, </span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">COLOR_CORRECTION_ABERRATION_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AE_ANTIBANDING_MODE</span><span class="s2">, </span><span class="s1">CONTROL_AE_ANTIBANDING_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AWB_MODE</span><span class="s2">, </span><span class="s1">CONTROL_AWB_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_EFFECT_MODE</span><span class="s2">, </span><span class="s1">CONTROL_EFFECT_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_SCENE_MODE</span><span class="s2">, </span><span class="s1">CONTROL_SCENE_MODE_DISABLED</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">DISTORTION_CORRECTION_MODE</span><span class="s2">, </span><span class="s1">DISTORTION_CORRECTION_MODE_OFF</span><span class="s2">)</span>
+
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">LENS_FOCUS_DISTANCE</span><span class="s2">,</span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">LENS_INFO_MINIMUM_FOCUS_DISTANCE</span><span class="s2">))</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">SENSOR_EXPOSURE_TIME</span><span class="s2">, </span><span class="s1">exposureTime</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">SENSOR_SENSITIVITY</span><span class="s2">, </span><span class="s1">sensitivity</span><span class="s2">)</span>
+        <span class="s3">//captureRequestPreview.set(CaptureRequest.LENS_FOCAL_LENGTH,10f)</span>
+        <span class="s1">previewSession</span><span class="s2">.</span><span class="s1">setRepeatingRequest</span><span class="s2">(</span><span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">build</span><span class="s2">(), </span><span class="s0">null</span><span class="s2">, </span><span class="s1">cameraHandler</span><span class="s2">)</span>
+
+    <span class="s2">}</span>
+
+    <span class="s1">@SuppressLint</span><span class="s2">(</span><span class="s5">&quot;MissingPermission&quot;</span><span class="s2">)</span>
+    <span class="s1">private suspend </span><span class="s0">fun </span><span class="s1">openCamera</span><span class="s2">(</span>
+        <span class="s1">manager: CameraManager</span><span class="s2">,</span>
+        <span class="s1">cameraId: String</span><span class="s2">,</span>
+        <span class="s1">handler: Handler? </span><span class="s2">= </span><span class="s0">null</span>
+    <span class="s2">)</span><span class="s1">: CameraDevice </span><span class="s2">= </span><span class="s1">suspendCancellableCoroutine </span><span class="s2">{ </span><span class="s1">cont </span><span class="s2">-&gt;</span>
+        <span class="s1">manager</span><span class="s2">.</span><span class="s1">openCamera</span><span class="s2">(</span><span class="s1">cameraId</span><span class="s2">, </span><span class="s0">object </span><span class="s1">: CameraDevice</span><span class="s2">.</span><span class="s1">StateCallback</span><span class="s2">() {</span>
+            <span class="s1">override </span><span class="s0">fun </span><span class="s1">onOpened</span><span class="s2">(</span><span class="s1">device: CameraDevice</span><span class="s2">) = </span><span class="s1">cont</span><span class="s2">.</span><span class="s1">resume</span><span class="s2">(</span><span class="s1">device</span><span class="s2">)</span>
+
+            <span class="s1">override </span><span class="s0">fun </span><span class="s1">onDisconnected</span><span class="s2">(</span><span class="s1">device: CameraDevice</span><span class="s2">) {</span>
+                <span class="s1">Log</span><span class="s2">.</span><span class="s1">w</span><span class="s2">(</span><span class="s1">TAG</span><span class="s2">, </span><span class="s5">&quot;Camera </span><span class="s0">$</span><span class="s1">cameraId </span><span class="s5">has been disconnected&quot;</span><span class="s2">)</span>
+                <span class="s1">requireActivity</span><span class="s2">().</span><span class="s1">finish</span><span class="s2">()</span>
+            <span class="s2">}</span>
+
+            <span class="s1">override </span><span class="s0">fun </span><span class="s1">onError</span><span class="s2">(</span><span class="s1">device: CameraDevice</span><span class="s2">, </span><span class="s1">error: Int</span><span class="s2">) {</span>
+                <span class="s0">val </span><span class="s1">msg </span><span class="s2">= </span><span class="s0">when</span><span class="s2">(</span><span class="s1">error</span><span class="s2">) {</span>
+                    <span class="s1">ERROR_CAMERA_DEVICE </span><span class="s2">-&gt; </span><span class="s5">&quot;Fatal (device)&quot;</span>
+                    <span class="s1">ERROR_CAMERA_DISABLED </span><span class="s2">-&gt; </span><span class="s5">&quot;Device policy&quot;</span>
+                    <span class="s1">ERROR_CAMERA_IN_USE </span><span class="s2">-&gt; </span><span class="s5">&quot;Camera in use&quot;</span>
+                    <span class="s1">ERROR_CAMERA_SERVICE </span><span class="s2">-&gt; </span><span class="s5">&quot;Fatal (service)&quot;</span>
+                    <span class="s1">ERROR_MAX_CAMERAS_IN_USE </span><span class="s2">-&gt; </span><span class="s5">&quot;Maximum cameras in use&quot;</span>
+                    <span class="s0">else </span><span class="s2">-&gt; </span><span class="s5">&quot;Unknown&quot;</span>
+                <span class="s2">}</span>
+                <span class="s0">val </span><span class="s1">exc </span><span class="s2">= </span><span class="s1">RuntimeException</span><span class="s2">(</span><span class="s5">&quot;Camera </span><span class="s0">$</span><span class="s1">cameraId </span><span class="s5">error: (</span><span class="s0">$</span><span class="s1">error</span><span class="s5">) </span><span class="s0">$</span><span class="s1">msg</span><span class="s5">&quot;</span><span class="s2">)</span>
+                <span class="s1">Log</span><span class="s2">.</span><span class="s1">e</span><span class="s2">(</span><span class="s1">TAG</span><span class="s2">, </span><span class="s1">exc</span><span class="s2">.</span><span class="s1">message</span><span class="s2">, </span><span class="s1">exc</span><span class="s2">)</span>
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">cont</span><span class="s2">.</span><span class="s1">isActive</span><span class="s2">) </span><span class="s1">cont</span><span class="s2">.</span><span class="s1">resumeWithException</span><span class="s2">(</span><span class="s1">exc</span><span class="s2">)</span>
+            <span class="s2">}</span>
+        <span class="s2">}, </span><span class="s1">handler</span><span class="s2">)</span>
+    <span class="s2">}</span>
+
+    <span class="s1">private suspend </span><span class="s0">fun </span><span class="s1">makePreviewSession</span><span class="s2">(</span><span class="s1">exposureTime: Long</span><span class="s2">, </span><span class="s1">sensitivity: Int</span><span class="s2">) = </span><span class="s1">lifecycleScope</span><span class="s2">.</span><span class="s1">launch</span><span class="s2">(</span><span class="s1">Dispatchers</span><span class="s2">.</span><span class="s1">IO</span><span class="s2">) {</span>
+
+        <span class="s1">previewSession </span><span class="s2">= </span><span class="s1">createCaptureSession</span><span class="s2">(</span><span class="s1">camera</span><span class="s2">, </span><span class="s1">listOf</span><span class="s2">(</span><span class="s1">viewFinder</span><span class="s2">.</span><span class="s1">holder</span><span class="s2">.</span><span class="s1">surface</span><span class="s2">), </span><span class="s1">cameraHandler</span><span class="s2">)</span>
+
+        <span class="s1">captureRequestPreview </span><span class="s2">= </span><span class="s1">camera</span><span class="s2">.</span><span class="s1">createCaptureRequest</span><span class="s2">(</span><span class="s1">CameraDevice</span><span class="s2">.</span><span class="s1">TEMPLATE_PREVIEW</span><span class="s2">)</span>
+            <span class="s2">.</span><span class="s1">apply </span><span class="s2">{ </span><span class="s1">addTarget</span><span class="s2">(</span><span class="s1">viewFinder</span><span class="s2">.</span><span class="s1">holder</span><span class="s2">.</span><span class="s1">surface</span><span class="s2">) }</span>
+
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AE_MODE</span><span class="s2">, </span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AE_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AF_MODE</span><span class="s2">, </span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AF_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">BLACK_LEVEL_LOCK</span><span class="s2">, </span><span class="s0">true</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">COLOR_CORRECTION_ABERRATION_MODE</span><span class="s2">, </span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">COLOR_CORRECTION_ABERRATION_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AE_ANTIBANDING_MODE</span><span class="s2">, </span><span class="s1">CONTROL_AE_ANTIBANDING_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AWB_MODE</span><span class="s2">, </span><span class="s1">CONTROL_AWB_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_EFFECT_MODE</span><span class="s2">, </span><span class="s1">CONTROL_EFFECT_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_SCENE_MODE</span><span class="s2">, </span><span class="s1">CONTROL_SCENE_MODE_DISABLED</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">DISTORTION_CORRECTION_MODE</span><span class="s2">, </span><span class="s1">DISTORTION_CORRECTION_MODE_OFF</span><span class="s2">)</span>
+
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">LENS_FOCUS_DISTANCE</span><span class="s2">, </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">LENS_INFO_MINIMUM_FOCUS_DISTANCE</span><span class="s2">))</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">SENSOR_EXPOSURE_TIME</span><span class="s2">, </span><span class="s1">exposureTime</span><span class="s2">)</span>
+        <span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">SENSOR_SENSITIVITY</span><span class="s2">, </span><span class="s1">sensitivity</span><span class="s2">)</span>
+        <span class="s3">//captureRequestPreview.set(CaptureRequest.LENS_FOCAL_LENGTH,10f)</span>
+
+        <span class="s1">previewSession</span><span class="s2">.</span><span class="s1">setRepeatingRequest</span><span class="s2">(</span><span class="s1">captureRequestPreview</span><span class="s2">.</span><span class="s1">build</span><span class="s2">(), </span><span class="s0">null</span><span class="s2">, </span><span class="s1">cameraHandler</span><span class="s2">)</span>
+
+    <span class="s2">}</span>
+
+    <span class="s1">private suspend </span><span class="s0">fun </span><span class="s1">createCaptureSession</span><span class="s2">(</span>
+        <span class="s1">device: CameraDevice</span><span class="s2">,</span>
+        <span class="s1">targets: List</span><span class="s2">&lt;</span><span class="s1">Surface</span><span class="s2">&gt;,</span>
+        <span class="s1">handler: Handler? </span><span class="s2">= </span><span class="s0">null</span>
+    <span class="s2">)</span><span class="s1">: CameraCaptureSession </span><span class="s2">= </span><span class="s1">suspendCoroutine </span><span class="s2">{ </span><span class="s1">cont </span><span class="s2">-&gt;</span>
+        <span class="s1">println</span><span class="s2">(</span><span class="s5">&quot;CaptureSessionCreated&quot;</span><span class="s2">)</span>
+        <span class="s3">// Create a capture session using the predefined targets; this also involves defining the</span>
+        <span class="s3">// session state callback to be notified of when the session is ready</span>
+        <span class="s1">device</span><span class="s2">.</span><span class="s1">createCaptureSession</span><span class="s2">(</span><span class="s1">targets</span><span class="s2">, </span><span class="s0">object</span><span class="s1">: CameraCaptureSession</span><span class="s2">.</span><span class="s1">StateCallback</span><span class="s2">() {</span>
+
+            <span class="s1">override </span><span class="s0">fun </span><span class="s1">onConfigured</span><span class="s2">(</span><span class="s1">session: CameraCaptureSession</span><span class="s2">) = </span><span class="s1">cont</span><span class="s2">.</span><span class="s1">resume</span><span class="s2">(</span><span class="s1">session</span><span class="s2">)</span>
+
+            <span class="s1">override </span><span class="s0">fun </span><span class="s1">onConfigureFailed</span><span class="s2">(</span><span class="s1">session: CameraCaptureSession</span><span class="s2">) {</span>
+                <span class="s0">val </span><span class="s1">exc </span><span class="s2">= </span><span class="s1">RuntimeException</span><span class="s2">(</span><span class="s5">&quot;Camera </span><span class="s0">${</span><span class="s1">device</span><span class="s2">.</span><span class="s1">id</span><span class="s0">} </span><span class="s5">session configuration failed&quot;</span><span class="s2">)</span>
+                <span class="s1">Log</span><span class="s2">.</span><span class="s1">e</span><span class="s2">(</span><span class="s1">TAG</span><span class="s2">, </span><span class="s1">exc</span><span class="s2">.</span><span class="s1">message</span><span class="s2">, </span><span class="s1">exc</span><span class="s2">)</span>
+                <span class="s1">cont</span><span class="s2">.</span><span class="s1">resumeWithException</span><span class="s2">(</span><span class="s1">exc</span><span class="s2">)</span>
+            <span class="s2">}</span>
+        <span class="s2">}, </span><span class="s1">handler</span><span class="s2">)</span>
+    <span class="s2">}</span>
+
+    <span class="s1">private suspend </span><span class="s0">fun </span><span class="s1">takePhoto</span><span class="s2">(</span><span class="s1">exposureTime: Long</span><span class="s2">,</span><span class="s1">sensitivity : Int</span><span class="s2">, </span><span class="s1">focusDistance: Float</span><span class="s2">, </span><span class="s1">session : CameraCaptureSession</span><span class="s2">)</span><span class="s1">:</span>
+            <span class="s1">CombinedCaptureResult </span><span class="s2">= </span><span class="s1">suspendCoroutine </span><span class="s2">{ </span><span class="s1">cont </span><span class="s2">-&gt;</span>
+
+        <span class="s1">captureRequestStillCapture </span><span class="s2">= </span><span class="s1">session</span><span class="s2">.</span><span class="s1">device</span><span class="s2">.</span><span class="s1">createCaptureRequest</span><span class="s2">(</span><span class="s1">CameraDevice</span><span class="s2">.</span><span class="s1">TEMPLATE_STILL_CAPTURE</span><span class="s2">).</span><span class="s1">apply </span><span class="s2">{</span><span class="s1">addTarget</span><span class="s2">(</span><span class="s1">imageReader</span><span class="s2">.</span><span class="s1">surface</span><span class="s2">)}</span>
+
+        <span class="s1">captureRequestStillCapture</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AE_MODE</span><span class="s2">, </span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AE_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestStillCapture</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AF_MODE</span><span class="s2">, </span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AF_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestStillCapture</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">BLACK_LEVEL_LOCK</span><span class="s2">, </span><span class="s0">true</span><span class="s2">)</span>
+        <span class="s1">captureRequestStillCapture</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">COLOR_CORRECTION_ABERRATION_MODE</span><span class="s2">, </span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">COLOR_CORRECTION_ABERRATION_MODE_OFF</span><span class="s2">)</span>
+<span class="s3">//        captureRequestStillCapture.set(CaptureRequest.COLOR_CORRECTION_MODE, CaptureRequest.COLOR_CORRECTION_MODE_)</span>
+        <span class="s1">captureRequestStillCapture</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AE_ANTIBANDING_MODE</span><span class="s2">, </span><span class="s1">CONTROL_AE_ANTIBANDING_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestStillCapture</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_AWB_MODE</span><span class="s2">, </span><span class="s1">CONTROL_AWB_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestStillCapture</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_EFFECT_MODE</span><span class="s2">, </span><span class="s1">CONTROL_EFFECT_MODE_OFF</span><span class="s2">)</span>
+        <span class="s1">captureRequestStillCapture</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">CONTROL_SCENE_MODE</span><span class="s2">, </span><span class="s1">CONTROL_SCENE_MODE_DISABLED</span><span class="s2">)</span>
+        <span class="s1">captureRequestStillCapture</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">DISTORTION_CORRECTION_MODE</span><span class="s2">, </span><span class="s1">DISTORTION_CORRECTION_MODE_OFF</span><span class="s2">)</span>
+
+        <span class="s1">captureRequestStillCapture</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">LENS_FOCUS_DISTANCE</span><span class="s2">, </span><span class="s1">focusDistance</span><span class="s2">)</span>
+        <span class="s1">captureRequestStillCapture</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">SENSOR_EXPOSURE_TIME</span><span class="s2">, </span><span class="s1">exposureTime</span><span class="s2">)</span>
+        <span class="s1">captureRequestStillCapture</span><span class="s2">.</span><span class="s1">set</span><span class="s2">(</span><span class="s1">CaptureRequest</span><span class="s2">.</span><span class="s1">SENSOR_SENSITIVITY</span><span class="s2">, </span><span class="s1">sensitivity</span><span class="s2">)</span>
+
+        <span class="s3">// Flush any images left in the image reader</span>
+        <span class="s1">@Suppress</span><span class="s2">(</span><span class="s5">&quot;ControlFlowWithEmptyBody&quot;</span><span class="s2">)</span>
+        <span class="s0">while </span><span class="s2">(</span><span class="s1">imageReader</span><span class="s2">.</span><span class="s1">acquireNextImage</span><span class="s2">() != </span><span class="s0">null</span><span class="s2">) {}</span>
+
+        <span class="s3">// Start a new image queue</span>
+        <span class="s0">var </span><span class="s1">imageQueue </span><span class="s2">= </span><span class="s1">ArrayBlockingQueue</span><span class="s2">&lt;</span><span class="s1">Image</span><span class="s2">&gt;(</span><span class="s1">IMAGE_BUFFER_SIZE</span><span class="s2">)</span>
+        <span class="s1">imageReader</span><span class="s2">.</span><span class="s1">setOnImageAvailableListener</span><span class="s2">({ </span><span class="s1">reader </span><span class="s2">-&gt;</span>
+            <span class="s0">var </span><span class="s1">image </span><span class="s2">= </span><span class="s1">reader</span><span class="s2">.</span><span class="s1">acquireNextImage</span><span class="s2">()</span>
+            <span class="s1">imageQueue</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">image</span><span class="s2">)</span>
+        <span class="s2">}, </span><span class="s1">imageReaderHandler</span><span class="s2">)</span>
+
+        <span class="s1">session</span><span class="s2">.</span><span class="s1">capture</span><span class="s2">(</span><span class="s1">captureRequestStillCapture</span><span class="s2">.</span><span class="s1">build</span><span class="s2">(), </span><span class="s0">object </span><span class="s1">: CameraCaptureSession</span><span class="s2">.</span><span class="s1">CaptureCallback</span><span class="s2">() {</span>
+
+            <span class="s1">override </span><span class="s0">fun </span><span class="s1">onCaptureStarted</span><span class="s2">(</span>
+                <span class="s1">session: CameraCaptureSession</span><span class="s2">,</span>
+                <span class="s1">request: CaptureRequest</span><span class="s2">,</span>
+                <span class="s1">timestamp: Long</span><span class="s2">,</span>
+                <span class="s1">frameNumber: Long</span><span class="s2">) {</span>
+                <span class="s0">super</span><span class="s2">.</span><span class="s1">onCaptureStarted</span><span class="s2">(</span><span class="s1">session</span><span class="s2">, </span><span class="s1">request</span><span class="s2">, </span><span class="s1">timestamp</span><span class="s2">, </span><span class="s1">frameNumber</span><span class="s2">)</span>
+                <span class="s1">viewFinder</span><span class="s2">.</span><span class="s1">post</span><span class="s2">(</span><span class="s1">animationTask</span><span class="s2">)</span>
+            <span class="s2">}</span>
+
+            <span class="s1">override </span><span class="s0">fun </span><span class="s1">onCaptureCompleted</span><span class="s2">(</span>
+                <span class="s1">session: CameraCaptureSession</span><span class="s2">,</span>
+                <span class="s1">request: CaptureRequest</span><span class="s2">,</span>
+                <span class="s1">result: TotalCaptureResult</span><span class="s2">) {</span>
+                <span class="s0">super</span><span class="s2">.</span><span class="s1">onCaptureCompleted</span><span class="s2">(</span><span class="s1">session</span><span class="s2">, </span><span class="s1">request</span><span class="s2">, </span><span class="s1">result</span><span class="s2">)</span>
+                <span class="s0">var </span><span class="s1">resultTimestamp </span><span class="s2">= </span><span class="s1">result</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CaptureResult</span><span class="s2">.</span><span class="s1">SENSOR_TIMESTAMP</span><span class="s2">)</span>
+                <span class="s1">Log</span><span class="s2">.</span><span class="s1">d</span><span class="s2">(</span><span class="s1">TAG</span><span class="s2">, </span><span class="s5">&quot;Capture result received: </span><span class="s0">$</span><span class="s1">resultTimestamp</span><span class="s5">&quot;</span><span class="s2">)</span>
+
+                <span class="s3">// Set a timeout in case image captured is dropped from the pipeline</span>
+                <span class="s0">var </span><span class="s1">exc </span><span class="s2">= </span><span class="s1">TimeoutException</span><span class="s2">(</span><span class="s5">&quot;Image dequeuing took too long&quot;</span><span class="s2">)</span>
+                <span class="s0">var </span><span class="s1">timeoutRunnable </span><span class="s2">= </span><span class="s1">Runnable </span><span class="s2">{ </span><span class="s1">cont</span><span class="s2">.</span><span class="s1">resumeWithException</span><span class="s2">(</span><span class="s1">exc</span><span class="s2">) }</span>
+                <span class="s1">imageReaderHandler</span><span class="s2">.</span><span class="s1">postDelayed</span><span class="s2">(</span><span class="s1">timeoutRunnable</span><span class="s2">, </span><span class="s1">IMAGE_CAPTURE_TIMEOUT_MILLIS</span><span class="s2">)</span>
+
+                <span class="s3">// Loop in the coroutine's context until an image with matching timestamp comes</span>
+                <span class="s3">// We need to launch the coroutine context again because the callback is done in</span>
+                <span class="s3">//  the handler provided to the `capture` method, not in our coroutine context</span>
+                <span class="s1">@Suppress</span><span class="s2">(</span><span class="s5">&quot;BlockingMethodInNonBlockingContext&quot;</span><span class="s2">)</span>
+                <span class="s1">lifecycleScope</span><span class="s2">.</span><span class="s1">launch</span><span class="s2">(</span><span class="s1">cont</span><span class="s2">.</span><span class="s1">context</span><span class="s2">) {</span>
+                    <span class="s0">while </span><span class="s2">(</span><span class="s0">true</span><span class="s2">) {</span>
+                        <span class="s3">// Dequeue images while timestamps don't match</span>
+                        <span class="s0">var </span><span class="s1">image </span><span class="s2">= </span><span class="s1">imageQueue</span><span class="s2">.</span><span class="s1">take</span><span class="s2">()</span>
+                        <span class="s3">// TODO(owahltinez): b/142011420</span>
+                        <span class="s3">// if (image.timestamp != resultTimestamp) continue</span>
+                        <span class="s0">if </span><span class="s2">(</span><span class="s1">Build</span><span class="s2">.</span><span class="s1">VERSION</span><span class="s2">.</span><span class="s1">SDK_INT </span><span class="s2">&gt;= </span><span class="s1">Build</span><span class="s2">.</span><span class="s1">VERSION_CODES</span><span class="s2">.</span><span class="s1">Q </span><span class="s2">&amp;&amp;</span>
+                            <span class="s1">image</span><span class="s2">.</span><span class="s1">format </span><span class="s2">!= </span><span class="s1">ImageFormat</span><span class="s2">.</span><span class="s1">DEPTH_JPEG </span><span class="s2">&amp;&amp;</span>
+                            <span class="s1">image</span><span class="s2">.</span><span class="s1">timestamp </span><span class="s2">!= </span><span class="s1">resultTimestamp</span><span class="s2">) </span><span class="s0">continue</span>
+                        <span class="s1">Log</span><span class="s2">.</span><span class="s1">d</span><span class="s2">(</span><span class="s1">TAG</span><span class="s2">, </span><span class="s5">&quot;Matching image dequeued: </span><span class="s0">${</span><span class="s1">image</span><span class="s2">.</span><span class="s1">timestamp</span><span class="s0">}</span><span class="s5">&quot;</span><span class="s2">)</span>
+
+                        <span class="s3">// Unset the image reader listener</span>
+                        <span class="s1">imageReaderHandler</span><span class="s2">.</span><span class="s1">removeCallbacks</span><span class="s2">(</span><span class="s1">timeoutRunnable</span><span class="s2">)</span>
+                        <span class="s1">imageReader</span><span class="s2">.</span><span class="s1">setOnImageAvailableListener</span><span class="s2">(</span><span class="s0">null</span><span class="s2">, </span><span class="s0">null</span><span class="s2">)</span>
+
+                        <span class="s3">// Clear the queue of images, if there are left</span>
+                        <span class="s0">while </span><span class="s2">(</span><span class="s1">imageQueue</span><span class="s2">.</span><span class="s1">size </span><span class="s2">&gt; </span><span class="s6">0</span><span class="s2">) {</span>
+                            <span class="s1">imageQueue</span><span class="s2">.</span><span class="s1">take</span><span class="s2">().</span><span class="s1">close</span><span class="s2">()</span>
+                        <span class="s2">}</span>
+
+                        <span class="s3">// Compute EXIF orientation metadata</span>
+                        <span class="s3">//val rotation = relativeOrientation.value ?: 0</span>
+                        <span class="s0">var </span><span class="s1">rotation </span><span class="s2">= </span><span class="s6">0</span>
+                        <span class="s3">//val mirrored = characteristics.get(CameraCharacteristics.LENS_FACING) ==</span>
+                                <span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">LENS_FACING_FRONT</span>
+                        <span class="s0">var </span><span class="s1">mirrored </span><span class="s2">= </span><span class="s0">false</span>
+                        <span class="s0">var </span><span class="s1">exifOrientation </span><span class="s2">= </span><span class="s1">computeExifOrientation</span><span class="s2">(</span><span class="s1">rotation</span><span class="s2">, </span><span class="s1">mirrored</span><span class="s2">)</span>
+
+                        <span class="s3">// Build the result and resume progress</span>
+                        <span class="s1">cont</span><span class="s2">.</span><span class="s1">resume</span><span class="s2">(</span><span class="s1">CombinedCaptureResult</span><span class="s2">(</span>
+                            <span class="s1">image</span><span class="s2">, </span><span class="s1">result</span><span class="s2">, </span><span class="s1">exifOrientation</span><span class="s2">, </span><span class="s1">imageReader</span><span class="s2">.</span><span class="s1">imageFormat</span><span class="s2">))</span>
+                        <span class="s0">break</span>
+                    <span class="s2">}</span>
+                <span class="s2">}</span>
+            <span class="s2">}</span>
+        <span class="s2">}, </span><span class="s1">cameraHandler</span><span class="s2">)</span>
+    <span class="s2">}</span>
+
+
+
+
+    <span class="s1">override </span><span class="s0">fun </span><span class="s1">onStop</span><span class="s2">() {</span>
+        <span class="s0">super</span><span class="s2">.</span><span class="s1">onStop</span><span class="s2">()</span>
+        <span class="s0">try </span><span class="s2">{</span>
+            <span class="s1">camera</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+        <span class="s2">} </span><span class="s1">catch </span><span class="s2">(</span><span class="s1">exc: Throwable</span><span class="s2">) {</span>
+            <span class="s1">Log</span><span class="s2">.</span><span class="s1">e</span><span class="s2">(</span><span class="s1">TAG</span><span class="s2">, </span><span class="s5">&quot;Error closing camera&quot;</span><span class="s2">, </span><span class="s1">exc</span><span class="s2">)</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+
+    <span class="s1">override </span><span class="s0">fun </span><span class="s1">onDestroy</span><span class="s2">() {</span>
+        <span class="s0">super</span><span class="s2">.</span><span class="s1">onDestroy</span><span class="s2">()</span>
+        <span class="s1">cameraThread</span><span class="s2">.</span><span class="s1">quitSafely</span><span class="s2">()</span>
+        <span class="s1">imageReaderThread</span><span class="s2">.</span><span class="s1">quitSafely</span><span class="s2">()</span>
+    <span class="s2">}</span>
+
+    <span class="s1">companion </span><span class="s0">object </span><span class="s2">{</span>
+        <span class="s0">val </span><span class="s1">TAG </span><span class="s2">= </span><span class="s1">CameraFragment::</span><span class="s0">class</span><span class="s2">.</span><span class="s1">java</span><span class="s2">.</span><span class="s1">simpleName</span>
+
+        <span class="s4">/** Maximum number of images that will be held in the reader's buffer */</span>
+        <span class="s1">const </span><span class="s0">val </span><span class="s1">IMAGE_BUFFER_SIZE: Int </span><span class="s2">= </span><span class="s6">30</span>
+
+        <span class="s4">/** Maximum time allowed to wait for the result of an image capture */</span>
+        <span class="s1">private const </span><span class="s0">val </span><span class="s1">IMAGE_CAPTURE_TIMEOUT_MILLIS: Long </span><span class="s2">= </span><span class="s6">5000</span>
+
+        <span class="s4">/** Helper data class used to hold capture metadata with their associated image */</span>
+        <span class="s1">data </span><span class="s0">class </span><span class="s1">CombinedCaptureResult</span><span class="s2">(</span>
+            <span class="s0">val </span><span class="s1">image: Image</span><span class="s2">,</span>
+            <span class="s0">val </span><span class="s1">metadata: CaptureResult</span><span class="s2">,</span>
+            <span class="s0">val </span><span class="s1">orientation: Int</span><span class="s2">,</span>
+            <span class="s0">val </span><span class="s1">format: Int</span>
+        <span class="s2">) </span><span class="s1">: Closeable </span><span class="s2">{</span>
+            <span class="s1">override </span><span class="s0">fun </span><span class="s1">close</span><span class="s2">() = </span><span class="s1">image</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+        <span class="s2">}</span>
+
+        <span class="s4">/**</span>
+         <span class="s4">* Create a [File] named a using formatted timestamp with the current date and time.</span>
+         <span class="s4">*</span>
+         <span class="s4">* </span><span class="s7">@return </span><span class="s4">[File] created.</span>
+         <span class="s4">*/</span>
+        <span class="s1">private </span><span class="s0">fun </span><span class="s1">createFile</span><span class="s2">(</span><span class="s1">context: Context</span><span class="s2">, </span><span class="s1">extension: String</span><span class="s2">)</span><span class="s1">: File </span><span class="s2">{</span>
+            <span class="s0">val </span><span class="s1">sdf </span><span class="s2">= </span><span class="s1">SimpleDateFormat</span><span class="s2">(</span><span class="s5">&quot;yyyy_MM_dd_HH_mm_ss_SSS&quot;</span><span class="s2">, </span><span class="s1">Locale</span><span class="s2">.</span><span class="s1">US</span><span class="s2">)</span>
+            <span class="s0">return </span><span class="s1">File</span><span class="s2">(</span><span class="s1">context</span><span class="s2">.</span><span class="s1">filesDir</span><span class="s2">, </span><span class="s5">&quot;IMG_</span><span class="s0">${</span><span class="s1">sdf</span><span class="s2">.</span><span class="s1">format</span><span class="s2">(</span><span class="s1">Date</span><span class="s2">())</span><span class="s0">}</span><span class="s5">.</span><span class="s0">$</span><span class="s1">extension</span><span class="s5">&quot;</span><span class="s2">)</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+
+
+<span class="s2">}</span>
+
+<span class="s0">fun </span><span class="s1">maxFinder</span><span class="s2">(</span><span class="s1">intensidades: IntArray</span><span class="s2">) </span><span class="s1">: List</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt; {</span>
+    <span class="s4">/** Declaracion de variables a utilizar */</span>
+    <span class="s0">var </span><span class="s1">posicionesMaximos </span><span class="s2">= </span><span class="s1">ArrayList</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+    <span class="s0">val </span><span class="s1">intensidadesEnMaximos </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+    <span class="s0">val </span><span class="s1">ancho </span><span class="s2">= </span><span class="s6">100 </span><span class="s3">// Ancho con el que defino que un punto es un maximo o minimo</span>
+
+    <span class="s0">for </span><span class="s2">(</span><span class="s1">i </span><span class="s0">in </span><span class="s1">ancho</span><span class="s2">+</span><span class="s6">1</span><span class="s2">..</span><span class="s1">intensidades</span><span class="s2">.</span><span class="s1">size </span><span class="s2">- (</span><span class="s1">ancho</span><span class="s2">+</span><span class="s6">1</span><span class="s2">)) {</span>
+        <span class="s4">/** Si cumplen estas condiciones es un máximo */</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">intensidades</span><span class="s2">[</span><span class="s1">i</span><span class="s2">] &gt;= </span><span class="s1">intensidades</span><span class="s2">.</span><span class="s1">sliceArray</span><span class="s2">(</span><span class="s1">i</span><span class="s2">-</span><span class="s1">ancho</span><span class="s2">..</span><span class="s1">i</span><span class="s2">-</span><span class="s6">1</span><span class="s2">).</span><span class="s1">maxOrNull</span><span class="s2">()!! &amp;&amp;</span>
+            <span class="s1">intensidades</span><span class="s2">[</span><span class="s1">i</span><span class="s2">] &gt;= </span><span class="s1">intensidades</span><span class="s2">.</span><span class="s1">sliceArray</span><span class="s2">(</span><span class="s1">i</span><span class="s2">+</span><span class="s6">1</span><span class="s2">..</span><span class="s1">i</span><span class="s2">+</span><span class="s1">ancho</span><span class="s2">).</span><span class="s1">maxOrNull</span><span class="s2">()!! &amp;&amp; </span><span class="s1">intensidades</span><span class="s2">[</span><span class="s1">i</span><span class="s2">] &gt; </span><span class="s6">30</span><span class="s2">) </span><span class="s3">// antes 50</span>
+        <span class="s2">{</span>
+
+            <span class="s1">posicionesMaximos</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">i</span><span class="s2">) </span><span class="s3">// Adjunta la posicion del maximo al vector de maximos</span>
+            <span class="s1">intensidadesEnMaximos</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">intensidades</span><span class="s2">[</span><span class="s1">i</span><span class="s2">])</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+
+    <span class="s0">val </span><span class="s1">ordenCero </span><span class="s2">= </span><span class="s1">encontrarMaximo</span><span class="s2">(</span><span class="s1">intensidadesEnMaximos</span><span class="s2">)[</span><span class="s6">0</span><span class="s2">]</span>
+    <span class="s0">var </span><span class="s1">ordenUnoLista </span><span class="s2">= </span><span class="s1">encontrarOrdenUno</span><span class="s2">(</span><span class="s1">intensidadesEnMaximos</span><span class="s2">,</span><span class="s1">ordenCero</span><span class="s2">)</span>
+    <span class="s0">var </span><span class="s1">ordenUno </span><span class="s2">= </span><span class="s1">ordenUnoLista</span><span class="s2">[</span><span class="s6">0</span><span class="s2">]</span>
+    <span class="s0">var </span><span class="s1">posOrdenUno </span><span class="s2">= </span><span class="s1">posicionesMaximos</span><span class="s2">[</span><span class="s1">ordenUnoLista</span><span class="s2">[</span><span class="s6">1</span><span class="s2">]]</span>
+
+    <span class="s0">return </span><span class="s1">listOf</span><span class="s2">(</span><span class="s1">ordenUno</span><span class="s2">,</span><span class="s1">posOrdenUno</span><span class="s2">)</span>
+<span class="s2">}</span>
+
+<span class="s0">fun </span><span class="s1">firstIndexOf</span><span class="s2">(</span><span class="s1">xs : MutableList</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;, </span><span class="s1">x : Number </span><span class="s2">) </span><span class="s1">: Number </span><span class="s2">{</span>
+    <span class="s0">var </span><span class="s1">n </span><span class="s2">= </span><span class="s6">0</span>
+    <span class="s0">for </span><span class="s2">(</span><span class="s1">k </span><span class="s0">in </span><span class="s6">0 </span><span class="s1">until xs</span><span class="s2">.</span><span class="s1">lastIndex</span><span class="s2">) {</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">xs</span><span class="s2">[</span><span class="s1">k</span><span class="s2">].</span><span class="s1">toFloat</span><span class="s2">()&lt;</span><span class="s1">x</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">()){</span>
+            <span class="s0">continue</span>
+        <span class="s2">} </span><span class="s0">else if </span><span class="s2">(</span><span class="s1">xs</span><span class="s2">[</span><span class="s1">k</span><span class="s2">].</span><span class="s1">toFloat</span><span class="s2">()==</span><span class="s1">x</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">()) {</span>
+            <span class="s1">n </span><span class="s2">= </span><span class="s1">k</span>
+            <span class="s0">break</span>
+        <span class="s2">} </span><span class="s0">else </span><span class="s2">{</span>
+            <span class="s1">n </span><span class="s2">= </span><span class="s1">k</span><span class="s2">-</span><span class="s6">1</span>
+            <span class="s0">break</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+    <span class="s0">return </span><span class="s1">n</span>
+<span class="s2">}</span>
+
+<span class="s0">fun </span><span class="s1">encontrarMaximo </span><span class="s2">(</span><span class="s1">xs : MutableList</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;) </span><span class="s1">: List</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt; {</span>
+    <span class="s0">val </span><span class="s1">l </span><span class="s2">= </span><span class="s1">xs</span><span class="s2">.</span><span class="s1">size</span>
+    <span class="s0">if </span><span class="s2">(</span><span class="s1">l</span><span class="s2">==</span><span class="s6">0</span><span class="s2">) {</span>
+        <span class="s0">return </span><span class="s1">listOf</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;(</span><span class="s6">0</span><span class="s2">,</span><span class="s6">0</span><span class="s2">)</span>
+    <span class="s2">} </span><span class="s0">else </span><span class="s2">{</span>
+        <span class="s0">var </span><span class="s1">x0 </span><span class="s2">= </span><span class="s1">xs</span><span class="s2">[</span><span class="s6">0</span><span class="s2">]</span>
+        <span class="s0">var </span><span class="s1">n </span><span class="s2">= </span><span class="s6">0</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">l </span><span class="s2">&gt;= </span><span class="s6">2 </span><span class="s2">) {</span>
+            <span class="s0">for </span><span class="s2">(</span><span class="s1">k </span><span class="s0">in </span><span class="s6">1</span><span class="s2">..(</span><span class="s1">l</span><span class="s2">-</span><span class="s6">1</span><span class="s2">)) {</span>
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">xs</span><span class="s2">[</span><span class="s1">k</span><span class="s2">] &lt;= </span><span class="s1">x0</span><span class="s2">) {</span>
+                    <span class="s0">continue</span>
+                <span class="s2">} </span><span class="s0">else </span><span class="s2">{</span>
+                    <span class="s1">x0 </span><span class="s2">= </span><span class="s1">xs</span><span class="s2">[</span><span class="s1">k</span><span class="s2">]</span>
+                    <span class="s1">n </span><span class="s2">= </span><span class="s1">k</span>
+                <span class="s2">}</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+        <span class="s0">return </span><span class="s1">listOf</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;(</span><span class="s1">x0</span><span class="s2">,</span><span class="s1">n</span><span class="s2">)</span>
+    <span class="s2">}</span>
+<span class="s2">}</span>
+
+<span class="s0">fun </span><span class="s1">encontrarMinimo </span><span class="s2">(</span><span class="s1">xs : MutableList</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;) </span><span class="s1">: List</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt; {</span>
+    <span class="s0">val </span><span class="s1">l </span><span class="s2">= </span><span class="s1">xs</span><span class="s2">.</span><span class="s1">size</span>
+    <span class="s0">if </span><span class="s2">(</span><span class="s1">l</span><span class="s2">==</span><span class="s6">0</span><span class="s2">) {</span>
+        <span class="s0">return </span><span class="s1">listOf</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+    <span class="s2">} </span><span class="s0">else </span><span class="s2">{</span>
+        <span class="s0">var </span><span class="s1">x0 </span><span class="s2">= </span><span class="s1">xs</span><span class="s2">[</span><span class="s6">0</span><span class="s2">]</span>
+        <span class="s0">var </span><span class="s1">n </span><span class="s2">= </span><span class="s6">0</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">l </span><span class="s2">&gt;= </span><span class="s6">2 </span><span class="s2">) {</span>
+            <span class="s0">for </span><span class="s2">(</span><span class="s1">k </span><span class="s0">in </span><span class="s6">1</span><span class="s2">..(</span><span class="s1">l</span><span class="s2">-</span><span class="s6">1</span><span class="s2">)) {</span>
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">xs</span><span class="s2">[</span><span class="s1">k</span><span class="s2">] &gt;= </span><span class="s1">x0</span><span class="s2">) {</span>
+                    <span class="s0">continue</span>
+                <span class="s2">} </span><span class="s0">else </span><span class="s2">{</span>
+                    <span class="s1">x0 </span><span class="s2">= </span><span class="s1">xs</span><span class="s2">[</span><span class="s1">k</span><span class="s2">]</span>
+                    <span class="s1">n </span><span class="s2">= </span><span class="s1">k</span>
+                <span class="s2">}</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+        <span class="s0">return </span><span class="s1">listOf</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;(</span><span class="s1">x0</span><span class="s2">,</span><span class="s1">n</span><span class="s2">)</span>
+    <span class="s2">}</span>
+<span class="s2">}</span>
+
+<span class="s0">fun </span><span class="s1">encontrarOrdenUno </span><span class="s2">(</span><span class="s1">xs : MutableList</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;, </span><span class="s1">I : Int</span><span class="s2">) </span><span class="s1">: List</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt; {</span>
+    <span class="s0">val </span><span class="s1">l </span><span class="s2">= </span><span class="s1">xs</span><span class="s2">.</span><span class="s1">size</span>
+    <span class="s0">if </span><span class="s2">(</span><span class="s1">l</span><span class="s2">==</span><span class="s6">0</span><span class="s2">) {</span>
+        <span class="s0">return </span><span class="s1">listOf</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+    <span class="s2">} </span><span class="s0">else </span><span class="s2">{</span>
+        <span class="s0">var </span><span class="s1">x0 </span><span class="s2">= </span><span class="s1">xs</span><span class="s2">[</span><span class="s6">0</span><span class="s2">]</span>
+        <span class="s0">var </span><span class="s1">n </span><span class="s2">= </span><span class="s6">0</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">l </span><span class="s2">&gt;= </span><span class="s6">2 </span><span class="s2">) {</span>
+            <span class="s0">for </span><span class="s2">(</span><span class="s1">k </span><span class="s0">in </span><span class="s6">1</span><span class="s2">..(</span><span class="s1">l</span><span class="s2">-</span><span class="s6">1</span><span class="s2">)) {</span>
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">xs</span><span class="s2">[</span><span class="s1">k</span><span class="s2">] &lt;= </span><span class="s1">x0 </span><span class="s2">|| </span><span class="s1">xs</span><span class="s2">[</span><span class="s1">k</span><span class="s2">]&gt;=</span><span class="s1">I</span><span class="s2">) {</span>
+                    <span class="s0">continue</span>
+                <span class="s2">} </span><span class="s0">else </span><span class="s2">{</span>
+                    <span class="s1">x0 </span><span class="s2">= </span><span class="s1">xs</span><span class="s2">[</span><span class="s1">k</span><span class="s2">]</span>
+                    <span class="s1">n </span><span class="s2">= </span><span class="s1">k</span>
+                <span class="s2">}</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+        <span class="s0">return </span><span class="s1">listOf</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;(</span><span class="s1">x0</span><span class="s2">,</span><span class="s1">n</span><span class="s2">)</span>
+    <span class="s2">}</span>
+<span class="s2">}</span>
+
+<span class="s0">fun </span><span class="s1">maxFinderPorIndice</span><span class="s2">(</span><span class="s1">intensidades: IntArray</span><span class="s2">, </span><span class="s1">j : Int</span><span class="s2">, </span><span class="s1">tol : Int</span><span class="s2">) </span><span class="s1">: List</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt; {</span>
+    <span class="s4">/** Declaracion de variables a utilizar */</span>
+    <span class="s0">var </span><span class="s1">posicionesMaximos </span><span class="s2">= </span><span class="s1">ArrayList</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+    <span class="s0">val </span><span class="s1">intensidadesEnMaximos </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Int</span><span class="s2">&gt;()</span>
+    <span class="s0">val </span><span class="s1">ancho </span><span class="s2">= </span><span class="s6">100 </span><span class="s3">// Ancho con el que defino que un punto es un maximo o minimo</span>
+
+    <span class="s0">for </span><span class="s2">(</span><span class="s1">i </span><span class="s0">in </span><span class="s1">ancho</span><span class="s2">+</span><span class="s6">1</span><span class="s2">..</span><span class="s1">intensidades</span><span class="s2">.</span><span class="s1">size </span><span class="s2">- (</span><span class="s1">ancho</span><span class="s2">+</span><span class="s6">1</span><span class="s2">)) {</span>
+        <span class="s4">/** Si cumplen estas condiciones es un máximo */</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">intensidades</span><span class="s2">[</span><span class="s1">i</span><span class="s2">] &gt;= </span><span class="s1">intensidades</span><span class="s2">.</span><span class="s1">sliceArray</span><span class="s2">(</span><span class="s1">i</span><span class="s2">-</span><span class="s1">ancho</span><span class="s2">..</span><span class="s1">i</span><span class="s2">-</span><span class="s6">1</span><span class="s2">).</span><span class="s1">maxOrNull</span><span class="s2">()!! &amp;&amp;</span>
+            <span class="s1">intensidades</span><span class="s2">[</span><span class="s1">i</span><span class="s2">] &gt;= </span><span class="s1">intensidades</span><span class="s2">.</span><span class="s1">sliceArray</span><span class="s2">(</span><span class="s1">i</span><span class="s2">+</span><span class="s6">1</span><span class="s2">..</span><span class="s1">i</span><span class="s2">+</span><span class="s1">ancho</span><span class="s2">).</span><span class="s1">maxOrNull</span><span class="s2">()!! &amp;&amp;</span>
+            <span class="s1">abs</span><span class="s2">(</span><span class="s1">i</span><span class="s2">-</span><span class="s1">j</span><span class="s2">)&lt;=</span><span class="s1">tol </span><span class="s2">&amp;&amp;</span>
+            <span class="s1">intensidades</span><span class="s2">[</span><span class="s1">i</span><span class="s2">] &gt; </span><span class="s6">30</span><span class="s2">) </span><span class="s3">// antes 50</span>
+        <span class="s2">{</span>
+            <span class="s1">posicionesMaximos</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">i</span><span class="s2">) </span><span class="s3">// Adjunta la posicion del maximo al vector de maximos</span>
+            <span class="s1">intensidadesEnMaximos</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">intensidades</span><span class="s2">[</span><span class="s1">i</span><span class="s2">])</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+
+    <span class="s0">var </span><span class="s1">ordenUnoLista </span><span class="s2">= </span><span class="s1">encontrarMaximo</span><span class="s2">(</span><span class="s1">intensidadesEnMaximos</span><span class="s2">)</span>
+    <span class="s0">var </span><span class="s1">ordenUno </span><span class="s2">= </span><span class="s1">ordenUnoLista</span><span class="s2">[</span><span class="s6">0</span><span class="s2">]</span>
+    <span class="s0">var </span><span class="s1">posOrdenUno </span><span class="s2">= </span><span class="s1">posicionesMaximos</span><span class="s2">[</span><span class="s1">ordenUnoLista</span><span class="s2">[</span><span class="s6">1</span><span class="s2">]]</span>
+
+    <span class="s0">return </span><span class="s1">listOf</span><span class="s2">(</span><span class="s1">ordenUno</span><span class="s2">,</span><span class="s1">posOrdenUno</span><span class="s2">)</span>
+<span class="s2">}</span>
+
+<span class="s0">fun </span><span class="s1">orientationFunction </span><span class="s2">(</span><span class="s1">orientation : Int</span><span class="s2">) </span><span class="s1">: Int </span><span class="s2">{</span>
+    <span class="s0">if </span><span class="s2">(</span><span class="s1">orientation </span><span class="s2">== </span><span class="s6">0 </span><span class="s2">|| </span><span class="s1">orientation </span><span class="s2">== </span><span class="s6">90</span><span class="s2">) {</span>
+        <span class="s0">return </span><span class="s6">0</span>
+    <span class="s2">} </span><span class="s0">else </span><span class="s2">{</span>
+        <span class="s0">return </span><span class="s6">180</span>
+    <span class="s2">}</span>
+<span class="s2">}</span>
+
+<span class="s0">fun </span><span class="s1">doubleList</span><span class="s2">(</span><span class="s1">start : Int</span><span class="s2">, </span><span class="s1">final : Int</span><span class="s2">) </span><span class="s1">: MutableList</span><span class="s2">&lt;</span><span class="s1">Double</span><span class="s2">&gt; {</span>
+    <span class="s0">val </span><span class="s1">xs </span><span class="s2">= </span><span class="s1">mutableListOf</span><span class="s2">&lt;</span><span class="s1">Double</span><span class="s2">&gt;()</span>
+    <span class="s0">var </span><span class="s1">n0 </span><span class="s2">= </span><span class="s1">start</span><span class="s2">.</span><span class="s1">toDouble</span><span class="s2">()</span>
+    <span class="s0">while </span><span class="s2">(</span><span class="s1">n0</span><span class="s2">&lt;=</span><span class="s1">final</span><span class="s2">){</span>
+        <span class="s1">xs</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">n0</span><span class="s2">)</span>
+        <span class="s1">n0</span><span class="s2">+=</span><span class="s6">1</span><span class="s2">.</span><span class="s1">toDouble</span><span class="s2">()</span>
+    <span class="s2">}</span>
+    <span class="s0">return </span><span class="s1">xs</span>
+<span class="s2">}</span>
+
+<span class="s0">fun </span><span class="s1">heavisideTheta </span><span class="s2">(</span><span class="s1">x : Number</span><span class="s2">) </span><span class="s1">: Float </span><span class="s2">{</span>
+    <span class="s0">var </span><span class="s1">y </span><span class="s2">= </span><span class="s1">x</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">()</span>
+    <span class="s0">if </span><span class="s2">(</span><span class="s1">y</span><span class="s2">&lt;</span><span class="s6">0</span><span class="s2">){</span>
+        <span class="s0">return </span><span class="s6">0f</span>
+    <span class="s2">} </span><span class="s0">else </span><span class="s2">{</span>
+        <span class="s0">return </span><span class="s6">1f</span>
+    <span class="s2">}</span>
+<span class="s2">}</span>
+
+<span class="s0">fun </span><span class="s1">calculateSD</span><span class="s2">(</span><span class="s1">numArray: DoubleArray</span><span class="s2">)</span><span class="s1">: Double </span><span class="s2">{</span>
+    <span class="s0">var </span><span class="s1">sum </span><span class="s2">= </span><span class="s6">0.0</span>
+    <span class="s0">var </span><span class="s1">standardDeviation </span><span class="s2">= </span><span class="s6">0.0</span>
+
+    <span class="s0">for </span><span class="s2">(</span><span class="s1">num </span><span class="s0">in </span><span class="s1">numArray</span><span class="s2">) {</span>
+        <span class="s1">sum </span><span class="s2">+= </span><span class="s1">num</span>
+    <span class="s2">}</span>
+
+    <span class="s0">val </span><span class="s1">mean </span><span class="s2">= </span><span class="s1">sum </span><span class="s2">/ </span><span class="s1">numArray</span><span class="s2">.</span><span class="s1">size</span>
+
+    <span class="s0">for </span><span class="s2">(</span><span class="s1">num </span><span class="s0">in </span><span class="s1">numArray</span><span class="s2">) {</span>
+        <span class="s1">standardDeviation </span><span class="s2">+= </span><span class="s1">Math</span><span class="s2">.</span><span class="s1">pow</span><span class="s2">(</span><span class="s1">num </span><span class="s2">- </span><span class="s1">mean</span><span class="s2">, </span><span class="s6">2.0</span><span class="s2">)</span>
+    <span class="s2">}</span>
+
+    <span class="s0">return </span><span class="s1">Math</span><span class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span class="s1">standardDeviation </span><span class="s2">/ </span><span class="s1">numArray</span><span class="s2">.</span><span class="s1">size</span><span class="s2">)</span>
+<span class="s2">}</span>
+
+<span class="s0">fun </span><span class="s1">zeros</span><span class="s2">(</span><span class="s1">n: Int</span><span class="s2">) </span><span class="s1">: MutableList</span><span class="s2">&lt;</span><span class="s1">Float</span><span class="s2">&gt; {</span>
+    <span class="s0">val </span><span class="s1">xs : MutableList</span><span class="s2">&lt;</span><span class="s1">Float</span><span class="s2">&gt; = </span><span class="s1">mutableListOf</span><span class="s2">()</span>
+    <span class="s1">repeat</span><span class="s2">(</span><span class="s1">n</span><span class="s2">){</span>
+        <span class="s1">xs</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s6">0f</span><span class="s2">)</span>
+    <span class="s2">}</span>
+    <span class="s0">return </span><span class="s1">xs</span>
+<span class="s2">}</span></pre>
+</body>
+</html>

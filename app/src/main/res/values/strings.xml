@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <string name="app_name">LUTIN</string>
+
+    <string name="capture">Capture</string>
+    <string name="continuar">Continue</string>
+    <string name="btn_absorbancia">Medir absorbancia</string>
+    <string name="btn_espectro">Medir espectro</string>
+    <string name="btn_medicion">Realizar Medición</string>
+    <string name="btn_autorotar">Calibrar</string>
+    <string name="siguiente">Siguiente</string>
+
+    <string name="descripcion_app">
+\nEsta aplicación permite realizar espectrometría de dos maneras distintas:\n
+\n<b>Medir espectro:</b> \nMedir el espectro de luz de una fuente.
+\n\n<b>Medir absorbancia:</b>\nMedir el espectro de absorbancia de una muestra.\n
+
+\nEn el <b>primer modo</b>, la medición se realiza en dos instancias:\nEn la primera se realiza a calibración tomando una sola foto del espectro.
+En la segunda se toma la cantidad de fotos determinada (5 por defecto) y con el promedio de ellas se calcula el espectro de la luz.\n
+\nEn el <b>segundo modo</b>, la medición se realiza en tres instancias:
+\nPrimero una de calibración, luego una en la que se toman la cantidad de fotos determinada para calcular el espectro de la luz <u>sin ninguna muestra</u> en la probeta y finalmente,
+en la tercer etapa, se coloca la probeta con la sustancia a estudiar y se toman las fotos del espectro.
+
+\nEn ambos modos, al final se visualiza un gráfico con la intensidad de cada frecuencia de luz. En este momento se pueden guardar los datos. \n
+    </string>
+
+    <string name="ir_a_medicion_I0">Medir intensidad cero</string>
+    <string name="paginaLOFT"> <a href="http://www.loft.df.uba.ar/">Sitio web LOFT</a></string>
+
+    <string name="selector_camera_descripcion">Seleccione la camara del dispositivo que desee utilizar</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="ajuste_los_par_metros_de_la_calibraci_n_intensidad_rgb">Ajuste los parámetros de la calibración Intensidad/RGB</string>
+    <string name="referencia">Referencia</string>
+    <string name="an_lisis_de_resultados">Análisis de resultados</string>
+    <string name="medir_absorbancia_test">Medir absorbancia</string>
+    <string name="canal_rojo">Canal rojo</string>
+    <string name="canal_verde">Canal verde</string>
+    <string name="canal_azul">Canal azul</string>
+    <string name="grises">Grises</string>
+</resources>

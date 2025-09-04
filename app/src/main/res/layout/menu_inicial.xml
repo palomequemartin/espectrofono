@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/layoutMenuFragment">
+    <!-- Este botón la saque porque no hacia nada
+    <Button
+        android:id="@+id/CalibLongOnda"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="[Nada por ahora]"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/AutoRotar"
+        app:layout_constraintVertical_bias="0.202" />
+    -->
+
+
+    <Button
+        android:id="@+id/AutoRotar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="180dp"
+        android:text="@string/btn_espectro"
+        android:textSize="16dp"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+    <Button
+        android:id="@+id/MedirAbsorbanciaTest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/medir_absorbancia_test"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/GIFwave" />
+
+    <ImageView
+        android:id="@+id/LogoLoft"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_marginStart="1dp"
+        android:layout_marginBottom="50dp"
+        android:alpha="0.6"
+        android:src="@drawable/l"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/nrofotos"
+        app:layout_constraintHorizontal_bias="0.044"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <EditText
+        android:id="@+id/nrofotos"
+        android:layout_width="90dp"
+        android:layout_height="48dp"
+        android:gravity="center_horizontal"
+        android:hint="# Fotos"
+        android:text="10"
+        android:inputType="number"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="@+id/texposicion2"
+        app:layout_constraintEnd_toStartOf="@id/texposicion2"
+        app:layout_constraintHorizontal_bias="0.1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/texposicion2" />
+
+
+    <EditText
+        android:id="@+id/distfocal"
+        android:layout_width="115dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="16dp"
+        android:gravity="center_horizontal"
+        android:hint="Dist focal (cm)"
+        android:text = "15"
+
+        android:inputType="numberDecimal"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/texposicion2" />
+
+    <EditText
+        android:id="@+id/texposicion2"
+        android:layout_width="115dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="28dp"
+        android:gravity="center_horizontal"
+        android:hint="Exposición (ms)"
+        android:text="100"
+        android:inputType="numberDecimal"
+
+        android:textSize="14sp"
+        app:layout_constraintEnd_toStartOf="@+id/sensibilidad"
+        app:layout_constraintStart_toEndOf="@+id/nrofotos"
+        app:layout_constraintTop_toBottomOf="@+id/MedirAbsorbanciaTest" />
+
+    <EditText
+        android:id="@id/sensibilidad"
+        android:layout_width="90dp"
+        android:layout_height="48dp"
+        android:gravity="center_horizontal"
+        android:hint="Sensibilidad"
+        android:text = "600"
+        android:inputType="numberDecimal"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="@+id/texposicion2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.19"
+        app:layout_constraintStart_toEndOf="@+id/texposicion2"
+        app:layout_constraintTop_toTopOf="@+id/texposicion2" />
+
+<!--    <Button-->
+<!--        android:id="@+id/actualizartexp"-->
+<!--        android:layout_width="93dp"-->
+<!--        android:layout_height="48dp"-->
+<!--        android:layout_marginEnd="7dp"-->
+
+<!--        android:text="Guardar"-->
+<!--        android:textSize="14sp"-->
+<!--        android:visibility="invisible"-->
+<!--        app:layout_constraintBottom_toBottomOf="@+id/LogoLoft"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintHorizontal_bias="0.949"-->
+<!--        app:layout_constraintStart_toEndOf="@id/texposicion"-->
+<!--        app:layout_constraintTop_toTopOf="@+id/LogoLoft" />-->
+
+
+    <pl.droidsonroids.gif.GifImageView
+        android:id="@+id/GIFwave"
+        android:layout_width="wrap_content"
+        android:layout_height="150dp"
+        android:layout_marginTop="0dp"
+        android:alpha="0.7"
+        android:src="@drawable/colorwavegif5"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/AutoRotar" />
+
+
+    <Button
+        android:id="@+id/Titulo"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="#9954D659"
+        android:text="Espectrofotómetro"
+        android:textSize="17dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/linkLOFT"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="@string/paginaLOFT"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/marcoinferior"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_marginTop="8dp"
+        android:background="#518145"
+        android:alpha="0.8"
+        android:text=""
+        app:layout_constraintBottom_toBottomOf="@id/Titulo" />
+
+    <EditText
+        android:id="@+id/LED"
+        android:layout_width="60dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="10dp"
+        android:gravity="center_horizontal"
+        android:hint="LED (nm)"
+        android:inputType="numberDecimal"
+        android:textSize="12sp"
+        android:visibility="invisible"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/marcoinferior" />
+
+    <TextView
+        android:id="@+id/valoresPermitidos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textAlignment="center"
+
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/texposicion2"
+        app:layout_constraintVertical_bias="0.609"
+        tools:text="Características\n
+        Dimensiones de la imagen: NNNNxMMMM píxeles\n
+        Rango de tiempo de exposición: ttt - ttt ms\n
+        Rango de sensibilidad: sss-ssss (ISO 12232:2006)\n
+        Distancia focal mínima: DDD cm
+        " />
+
+    <Button
+        android:id="@+id/botonPruebas"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Calibración intensidad/RGB"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@+id/AutoRotar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/marcoinferior" />
+
+    <Switch
+        android:id="@+id/switch1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:text="T/N"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@id/AutoRotar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/botonPruebas" />
+
+    <Button
+        android:id="@+id/botonPrueba"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="prueba"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/botonPruebas"
+        app:layout_constraintTop_toBottomOf="@+id/Titulo" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

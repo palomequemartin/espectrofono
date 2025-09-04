@@ -1,0 +1,162 @@
+<html>
+<head>
+<title>MenuFragment.kt</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cf8e6d;}
+.s1 { color: #bcbec4;}
+.s2 { color: #bcbec4;}
+.s3 { color: #7a7e85;}
+.s4 { color: #5f826b; font-style: italic;}
+.s5 { color: #6aab73;}
+.s6 { color: #2aacb8;}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+MenuFragment.kt</font>
+</center></td></tr></table>
+<pre><span class="s0">package </span><span class="s1">com</span><span class="s2">.</span><span class="s1">example</span><span class="s2">.</span><span class="s1">android</span><span class="s2">.</span><span class="s1">camera2</span><span class="s2">.</span><span class="s1">basic</span><span class="s2">.</span><span class="s1">fragments</span>
+
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">annotation</span><span class="s2">.</span><span class="s1">SuppressLint</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">content</span><span class="s2">.</span><span class="s1">Context</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">os</span><span class="s2">.</span><span class="s1">Bundle</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">view</span><span class="s2">.</span><span class="s1">LayoutInflater</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">view</span><span class="s2">.</span><span class="s1">View</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">view</span><span class="s2">.</span><span class="s1">ViewGroup</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">fragment</span><span class="s2">.</span><span class="s1">app</span><span class="s2">.</span><span class="s1">Fragment</span>
+
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">text</span><span class="s2">.</span><span class="s1">method</span><span class="s2">.</span><span class="s1">LinkMovementMethod</span>
+
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">navigation</span><span class="s2">.</span><span class="s1">Navigation</span>
+<span class="s1">import androidx</span><span class="s2">.</span><span class="s1">navigation</span><span class="s2">.</span><span class="s1">fragment</span><span class="s2">.</span><span class="s1">navArgs</span>
+<span class="s1">import com</span><span class="s2">.</span><span class="s1">example</span><span class="s2">.</span><span class="s1">android</span><span class="s2">.</span><span class="s1">camera2</span><span class="s2">.</span><span class="s1">basic</span><span class="s2">.</span><span class="s1">R</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">hardware</span><span class="s2">.</span><span class="s1">camera2</span><span class="s2">.</span><span class="s1">CameraCharacteristics</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">hardware</span><span class="s2">.</span><span class="s1">camera2</span><span class="s2">.</span><span class="s1">CameraManager</span>
+<span class="s1">import android</span><span class="s2">.</span><span class="s1">widget</span><span class="s2">.*</span>
+<span class="s1">import com</span><span class="s2">.</span><span class="s1">example</span><span class="s2">.</span><span class="s1">android</span><span class="s2">.</span><span class="s1">camera</span><span class="s2">.</span><span class="s1">utils</span><span class="s2">.</span><span class="s1">OrientationLiveData</span>
+<span class="s3">//import kotlinx.android.synthetic.main.fragment_medir_absorbancia_test.*</span>
+<span class="s3">//import kotlinx.android.synthetic.main.menu_inicial.*</span>
+<span class="s1">import java</span><span class="s2">.</span><span class="s1">util</span><span class="s2">.</span><span class="s1">Observer</span>
+
+<span class="s3">/* Este es el fragmento principal. Una vez que diste los permisos y elegiste la camera se abres te menu. 
+*  Descubri algo buenisimo. En nav_graph.xml podes ver como hacer se relacionan los fragmentos de manera visual. 
+ 
+* */</span>
+<span class="s0">class </span><span class="s1">MenuFragment: Fragment</span><span class="s2">(){</span>
+
+    <span class="s4">/** AndroidX navigation arguments */</span>
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">args: MenuFragmentArgs by navArgs</span><span class="s2">() </span><span class="s3">//con esto recibo datos de otros fragmentos</span>
+
+    <span class="s4">/** Detects, characterizes, and connects to a CameraDevice (used for all camera operations) */</span>
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">cameraManager: CameraManager by lazy </span><span class="s2">{</span>
+        <span class="s0">val </span><span class="s1">context </span><span class="s2">= </span><span class="s1">requireContext</span><span class="s2">().</span><span class="s1">applicationContext</span>
+        <span class="s1">context</span><span class="s2">.</span><span class="s1">getSystemService</span><span class="s2">(</span><span class="s1">Context</span><span class="s2">.</span><span class="s1">CAMERA_SERVICE</span><span class="s2">) </span><span class="s0">as </span><span class="s1">CameraManager</span>
+    <span class="s2">}</span>
+
+    <span class="s4">/** [CameraCharacteristics] corresponding to the provided Camera ID */</span>
+    <span class="s1">private </span><span class="s0">val </span><span class="s1">characteristics: CameraCharacteristics by lazy </span><span class="s2">{</span>
+        <span class="s1">cameraManager</span><span class="s2">.</span><span class="s1">getCameraCharacteristics</span><span class="s2">(</span><span class="s1">args</span><span class="s2">.</span><span class="s1">cameraId</span><span class="s2">)</span>
+    <span class="s2">}</span>
+
+    <span class="s4">/** Live data listener for changes in the device orientation relative to the camera */</span>
+    <span class="s1">private lateinit </span><span class="s0">var </span><span class="s1">relativeOrientation: OrientationLiveData</span>
+
+    <span class="s1">@SuppressLint</span><span class="s2">(</span><span class="s5">&quot;SetTextI18n&quot;</span><span class="s2">)</span>
+    <span class="s1">override </span><span class="s0">fun </span><span class="s1">onCreateView</span><span class="s2">(</span><span class="s1">inflater: LayoutInflater</span><span class="s2">, </span><span class="s1">container: ViewGroup?</span><span class="s2">, </span><span class="s1">savedInstanceState: Bundle?</span><span class="s2">)</span><span class="s1">: View? </span><span class="s2">{</span>
+        <span class="s0">val </span><span class="s1">view </span><span class="s2">= </span><span class="s1">inflater</span><span class="s2">.</span><span class="s1">inflate</span><span class="s2">(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">layout</span><span class="s2">.</span><span class="s1">menu_inicial</span><span class="s2">, </span><span class="s1">container</span><span class="s2">, </span><span class="s0">false</span><span class="s2">)</span>
+        <span class="s0">val </span><span class="s1">titulo </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">&lt;</span><span class="s1">Button</span><span class="s2">&gt;(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">Titulo</span><span class="s2">)</span>
+        <span class="s0">val </span><span class="s1">valoresPermitidos </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">&lt;</span><span class="s1">TextView</span><span class="s2">&gt;(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">valoresPermitidos</span><span class="s2">)</span>
+        <span class="s0">val </span><span class="s1">medirAbsTest : Button </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">MedirAbsorbanciaTest</span><span class="s2">)</span>
+        <span class="s0">val </span><span class="s1">numberOfPicturesTextView : TextView </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">((</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">nrofotos</span><span class="s2">))</span>
+        <span class="s0">val </span><span class="s1">exposureTimeTextView : TextView </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">((</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">texposicion</span><span class="s2">))</span>
+        <span class="s0">val </span><span class="s1">sensitivityTextView : TextView </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">((</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">sensibilidad</span><span class="s2">))</span>
+        <span class="s0">val </span><span class="s1">rangoS </span><span class="s2">= </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">SENSOR_INFO_EXPOSURE_TIME_RANGE</span><span class="s2">)</span>
+        <span class="s0">val </span><span class="s1">tmin </span><span class="s2">= </span><span class="s1">rangoS?</span><span class="s2">.</span><span class="s1">lower</span>
+        <span class="s0">val </span><span class="s1">tmax </span><span class="s2">= </span><span class="s1">rangoS?</span><span class="s2">.</span><span class="s1">upper</span>
+        <span class="s0">val </span><span class="s1">dimensions </span><span class="s2">= </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">SCALER_STREAM_CONFIGURATION_MAP</span><span class="s2">)!!.</span><span class="s1">getOutputSizes</span><span class="s2">(</span><span class="s1">args</span><span class="s2">.</span><span class="s1">pixelFormat</span><span class="s2">)</span>
+        <span class="s0">val </span><span class="s1">h </span><span class="s2">= </span><span class="s1">dimensions</span><span class="s2">[</span><span class="s6">0</span><span class="s2">].</span><span class="s1">height</span>
+        <span class="s0">val </span><span class="s1">w </span><span class="s2">= </span><span class="s1">dimensions</span><span class="s2">[</span><span class="s6">0</span><span class="s2">].</span><span class="s1">width</span>
+        <span class="s0">val </span><span class="s1">sensMin </span><span class="s2">= </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">SENSOR_INFO_SENSITIVITY_RANGE</span><span class="s2">)</span><span class="s1">?</span><span class="s2">.</span><span class="s1">lower ?: </span><span class="s6">0</span>
+        <span class="s0">val </span><span class="s1">sensMax </span><span class="s2">= </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">SENSOR_INFO_SENSITIVITY_RANGE</span><span class="s2">)</span><span class="s1">?</span><span class="s2">.</span><span class="s1">upper ?: </span><span class="s6">100000</span>
+        <span class="s0">val </span><span class="s1">minimumFocusDistance : Float </span><span class="s2">= </span><span class="s1">characteristics</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">CameraCharacteristics</span><span class="s2">.</span><span class="s1">LENS_INFO_MINIMUM_FOCUS_DISTANCE</span><span class="s2">) </span><span class="s1">?: </span><span class="s6">1f</span>
+        <span class="s0">val </span><span class="s1">prueba : Button </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">botonPrueba</span><span class="s2">)</span>
+
+        <span class="s0">val </span><span class="s1">linkLOFTview</span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">&lt;</span><span class="s1">TextView</span><span class="s2">&gt;(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">linkLOFT</span><span class="s2">)</span>
+        <span class="s1">linkLOFTview</span><span class="s2">.</span><span class="s1">movementMethod </span><span class="s2">= </span><span class="s1">LinkMovementMethod</span><span class="s2">.</span><span class="s1">getInstance</span><span class="s2">()</span>
+
+        <span class="s0">val </span><span class="s1">layoutMenuFragment : View </span><span class="s2">= </span><span class="s1">view</span><span class="s2">.</span><span class="s1">findViewById</span><span class="s2">(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">layoutMenuFragment</span><span class="s2">)</span>
+
+        <span class="s1">relativeOrientation </span><span class="s2">= </span><span class="s1">OrientationLiveData</span><span class="s2">(</span><span class="s1">requireContext</span><span class="s2">(), </span><span class="s1">characteristics</span><span class="s2">).</span><span class="s1">apply </span><span class="s2">{</span>
+            <span class="s1">observe</span><span class="s2">(</span><span class="s1">viewLifecycleOwner</span><span class="s2">, </span><span class="s1">androidx</span><span class="s2">.</span><span class="s1">lifecycle</span><span class="s2">.</span><span class="s1">Observer </span><span class="s2">{</span>
+                    <span class="s1">orientation </span><span class="s2">-&gt; </span><span class="s1">view</span><span class="s2">.</span><span class="s1">rotation </span><span class="s2">= </span><span class="s1">orientationFunction</span><span class="s2">(</span><span class="s1">orientation</span><span class="s2">).</span><span class="s1">toFloat</span><span class="s2">()</span>
+            <span class="s2">})</span>
+        <span class="s2">}</span>
+<span class="s4">/**</span>
+        <span class="s4">prueba.setOnClickListener {</span>
+            <span class="s4">Toast.makeText(activity,&quot;Botón apretado&quot;,Toast.LENGTH_SHORT).show()</span>
+        <span class="s4">}</span>
+<span class="s4">*/</span>
+        <span class="s1">medirAbsTest</span><span class="s2">.</span><span class="s1">setOnClickListener </span><span class="s2">{</span>
+            <span class="s0">if </span><span class="s2">(</span><span class="s1">numberOfPicturesTextView</span><span class="s2">.</span><span class="s1">text</span><span class="s2">.</span><span class="s1">isNotEmpty</span><span class="s2">() &amp;&amp; </span><span class="s1">exposureTimeTextView</span><span class="s2">.</span><span class="s1">text</span><span class="s2">.</span><span class="s1">isNotEmpty</span><span class="s2">() &amp;&amp; </span><span class="s1">sensitivityTextView</span><span class="s2">.</span><span class="s1">text</span><span class="s2">.</span><span class="s1">isNotEmpty</span><span class="s2">())</span>
+            <span class="s2">{</span>
+                <span class="s0">val </span><span class="s1">numberOfPictures: Int </span><span class="s2">= </span><span class="s1">numberOfPicturesTextView</span><span class="s2">.</span><span class="s1">text</span><span class="s2">.</span><span class="s1">toString</span><span class="s2">().</span><span class="s1">toInt</span><span class="s2">()</span>
+                <span class="s0">val </span><span class="s1">exposureTime: Long </span><span class="s2">= (</span><span class="s1">exposureTimeTextView</span><span class="s2">.</span><span class="s1">text</span><span class="s2">.</span><span class="s1">toString</span><span class="s2">().</span><span class="s1">toFloat</span><span class="s2">()*</span><span class="s6">1000000f</span><span class="s2">).</span><span class="s1">toLong</span><span class="s2">()</span>
+                <span class="s0">val </span><span class="s1">sensitivity: Int </span><span class="s2">= </span><span class="s1">sensitivityTextView</span><span class="s2">.</span><span class="s1">text</span><span class="s2">.</span><span class="s1">toString</span><span class="s2">().</span><span class="s1">toInt</span><span class="s2">()</span>
+
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">numberOfPictures</span><span class="s2">&lt;</span><span class="s6">0</span><span class="s2">)</span>
+                <span class="s2">{</span>
+                    <span class="s1">Toast</span><span class="s2">.</span><span class="s1">makeText</span><span class="s2">(</span><span class="s1">activity</span><span class="s2">,</span><span class="s5">&quot;El número de fotos es negativo&quot;</span><span class="s2">,</span><span class="s1">Toast</span><span class="s2">.</span><span class="s1">LENGTH_SHORT</span><span class="s2">).</span><span class="s1">show</span><span class="s2">()</span>
+                <span class="s2">}</span>
+                <span class="s0">else if </span><span class="s2">(</span><span class="s1">exposureTime </span><span class="s2">&lt; (</span><span class="s1">tmin?: </span><span class="s6">0L</span><span class="s2">) || </span><span class="s1">exposureTime </span><span class="s2">&gt; (</span><span class="s1">tmax?: </span><span class="s2">(</span><span class="s6">10000L</span><span class="s2">*</span><span class="s6">1000000L</span><span class="s2">)))</span>
+                <span class="s2">{</span>
+                    <span class="s1">Toast</span><span class="s2">.</span><span class="s1">makeText</span><span class="s2">(</span><span class="s1">activity</span><span class="s2">,</span><span class="s5">&quot;El tiempo de exposición no está en rango&quot;</span><span class="s2">,</span><span class="s1">Toast</span><span class="s2">.</span><span class="s1">LENGTH_SHORT</span><span class="s2">).</span><span class="s1">show</span><span class="s2">()</span>
+                <span class="s2">}</span>
+                <span class="s0">else if </span><span class="s2">(</span><span class="s1">sensitivity</span><span class="s2">&lt;</span><span class="s1">sensMin </span><span class="s2">|| </span><span class="s1">sensitivity</span><span class="s2">&gt;</span><span class="s1">sensMax</span><span class="s2">)</span>
+                <span class="s2">{</span>
+                    <span class="s1">Toast</span><span class="s2">.</span><span class="s1">makeText</span><span class="s2">(</span><span class="s1">activity</span><span class="s2">,</span><span class="s5">&quot;La sensibilidad no está en rango&quot;</span><span class="s2">,</span><span class="s1">Toast</span><span class="s2">.</span><span class="s1">LENGTH_SHORT</span><span class="s2">).</span><span class="s1">show</span><span class="s2">()</span>
+                <span class="s2">}</span>
+                <span class="s0">else</span>
+                <span class="s2">{</span>
+                    <span class="s1">Navigation</span><span class="s2">.</span><span class="s1">findNavController</span><span class="s2">(</span><span class="s1">requireActivity</span><span class="s2">(), </span><span class="s1">R</span><span class="s2">.</span><span class="s1">id</span><span class="s2">.</span><span class="s1">fragment_container</span><span class="s2">)</span>
+                        <span class="s2">.</span><span class="s1">navigate</span><span class="s2">(</span>
+                            <span class="s1">MenuFragmentDirections</span><span class="s2">.</span><span class="s1">actionMenuFragmentToMedirAbsorbanciaTest</span><span class="s2">(</span>
+                                <span class="s1">args</span><span class="s2">.</span><span class="s1">cameraId</span><span class="s2">,</span>
+                                <span class="s1">args</span><span class="s2">.</span><span class="s1">pixelFormat</span><span class="s2">,</span>
+                                <span class="s1">numberOfPictures</span><span class="s2">,</span>
+                                <span class="s1">exposureTime</span><span class="s2">,</span>
+                                <span class="s1">sensitivity</span>
+                            <span class="s2">)</span>
+                        <span class="s2">)</span>
+                <span class="s2">}</span>
+
+            <span class="s2">}</span>
+            <span class="s0">else</span>
+            <span class="s2">{</span>
+                <span class="s1">Toast</span><span class="s2">.</span><span class="s1">makeText</span><span class="s2">(</span><span class="s1">activity</span><span class="s2">,</span><span class="s5">&quot;Completar número de fotos, tiempo de exposición y sensibilidad&quot;</span><span class="s2">,</span><span class="s1">Toast</span><span class="s2">.</span><span class="s1">LENGTH_SHORT</span><span class="s2">).</span><span class="s1">show</span><span class="s2">()</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+
+        <span class="s1">titulo</span><span class="s2">.</span><span class="s1">setOnClickListener </span><span class="s2">{</span>
+            <span class="s0">val </span><span class="s1">dialog </span><span class="s2">= </span><span class="s1">VentanaInfo</span><span class="s2">()</span>
+            <span class="s0">val </span><span class="s1">fragmentManager </span><span class="s2">= </span><span class="s1">getChildFragmentManager</span><span class="s2">()</span>
+
+            <span class="s1">dialog</span><span class="s2">.</span><span class="s1">show</span><span class="s2">(</span><span class="s1">fragmentManager</span><span class="s2">, </span><span class="s5">&quot;VentanaInfo&quot;</span><span class="s2">)</span>
+        <span class="s2">}</span>
+
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">tmin</span><span class="s2">!=</span><span class="s0">null</span><span class="s2">&amp;&amp;</span><span class="s1">tmax</span><span class="s2">!=</span><span class="s0">null</span><span class="s2">){</span>
+            <span class="s1">valoresPermitidos</span><span class="s2">.</span><span class="s1">text </span><span class="s2">= </span><span class="s5">&quot;Características</span><span class="s0">\n</span><span class="s5">Dimensiones de la imagen: </span><span class="s0">${</span><span class="s1">w</span><span class="s0">}</span><span class="s5">x</span><span class="s0">${</span><span class="s1">h</span><span class="s0">} </span><span class="s5">píxeles</span><span class="s0">\n</span><span class="s5">Rango de tiempo de &quot; </span><span class="s2">+</span>
+                    <span class="s5">&quot; exposición: </span><span class="s0">${</span><span class="s1">tmin</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">() /</span><span class="s6">1000000f</span><span class="s0">}</span><span class="s5">-</span><span class="s0">${</span><span class="s1">tmax</span><span class="s2">.</span><span class="s1">toFloat</span><span class="s2">()  /</span><span class="s6">1000000f</span><span class="s0">} </span><span class="s5">ms&quot; </span><span class="s2">+</span>
+                    <span class="s5">&quot;</span><span class="s0">\n</span><span class="s5">Rango de sensibilidad: </span><span class="s0">$</span><span class="s1">sensMin</span><span class="s5">-</span><span class="s0">$</span><span class="s1">sensMax </span><span class="s5">(ISO 12232:2006)&quot; </span><span class="s2">+</span>
+                    <span class="s5">&quot;</span><span class="s0">\n</span><span class="s5">Distancia focal mínima: </span><span class="s0">${</span><span class="s6">1f</span><span class="s2">/</span><span class="s1">minimumFocusDistance</span><span class="s2">*</span><span class="s6">100f</span><span class="s0">} </span><span class="s5">cm&quot;</span>
+        <span class="s2">} </span><span class="s0">else </span><span class="s2">{</span>
+            <span class="s1">Toast</span><span class="s2">.</span><span class="s1">makeText</span><span class="s2">(</span><span class="s1">activity</span><span class="s2">,</span><span class="s5">&quot;Error en la adquisición de rango de tiempo de exposición de la cámara&quot;</span><span class="s2">,</span><span class="s1">Toast</span><span class="s2">.</span><span class="s1">LENGTH_SHORT</span><span class="s2">).</span><span class="s1">show</span><span class="s2">()</span>
+        <span class="s2">}</span>
+
+        <span class="s0">return </span><span class="s1">view</span>
+    <span class="s2">}</span>
+<span class="s2">}</span></pre>
+</body>
+</html>
