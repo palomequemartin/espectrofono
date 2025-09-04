@@ -16,6 +16,9 @@ captures/
 *.apk
 output.json
 
+#Remove DS_STORE files (mac generates these)
+**/.DS_Store
+
 # IntelliJ
 *.iml
 .idea/
