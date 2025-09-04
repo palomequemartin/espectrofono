@@ -203,3 +203,6 @@ fabric.properties
 ### AndroidStudio Patch ###
 
 !/gradle/wrapper/gradle-wrapper.jar
+gitignore.txt
+.DS_Store
+gitignore.txt
