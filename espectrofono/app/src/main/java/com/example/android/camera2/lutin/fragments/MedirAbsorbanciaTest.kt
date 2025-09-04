@@ -185,7 +185,7 @@ class MedirAbsorbanciaTest : Fragment() {
 
         /**-------------Open camera and first preview session-------------**/
         previewExposureTime = exposureTime //tmax
-        openDevice(previewExposureTime,sensitivity, focalDistance) // Modificación 06/05/24
+        openDevice(previewExposureTime,sensitivity, 1f/focalDistance*100f) // Modificación 06/05/24
 
         /** --------- Botones -----------**/
         botonContinuar.setOnClickListener {
@@ -270,7 +270,7 @@ class MedirAbsorbanciaTest : Fragment() {
         previewSession.close()
         delay(100L)
         // makePreviewSession(tmax,sensitivity,focalDistance) // Modificación 06/05/24
-        makePreviewSession(exposureTime,sensitivity,focalDistance)
+        makePreviewSession(exposureTime,sensitivity,focalDistanceCm)
         delay(100L)
         previewSession.close()
         delay(100L)
@@ -283,7 +283,7 @@ class MedirAbsorbanciaTest : Fragment() {
             result.image.close()
             picturesSession.close()
             // makePreviewSession(tmax,sensitivity,focalDistance) // Modificación 06/05/24
-            makePreviewSession(exposureTime,sensitivity,focalDistance)
+            makePreviewSession(exposureTime,sensitivity,focalDistanceCm)
 
             if (testMode==true) {
                 m = doubleArrayOf((h/2f).toDouble(),0.toDouble())
@@ -383,7 +383,7 @@ class MedirAbsorbanciaTest : Fragment() {
                 myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                 result.image.close()
                 picturesSession.close()
-                makePreviewSession(previewExposureTime,sensitivity,focalDistance) // Modificación 06/05/24
+                makePreviewSession(previewExposureTime,sensitivity,focalDistanceCm) // Modificación 06/05/24
                 for (n in 0 until listaXRectaAjuste.lastIndex) {
                     var i0 = listaXRectaAjuste[n]
                     var j0 = listaYRectaAjuste[n]
@@ -584,7 +584,7 @@ class MedirAbsorbanciaTest : Fragment() {
 
         // Close optimized session and return to preview
         picturesSession.close()
-        makePreviewSession(previewExposureTime,sensitivity,focalDistance)
+        makePreviewSession(previewExposureTime,sensitivity,focalDistanceCm)
 
 
 
