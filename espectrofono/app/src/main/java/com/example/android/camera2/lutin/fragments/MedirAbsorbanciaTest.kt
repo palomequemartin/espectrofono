@@ -25,6 +25,7 @@ import com.example.android.camera.utils.getPreviewOutputSize
 import com.example.android.camera2.lutin.CameraActivity
 import com.luciocoro.lutin.R
 import com.example.calibrarlongituddeonda.Autorotar
+import com.example.android.camera2.lutin.CalibrationData
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
@@ -51,6 +52,9 @@ class MedirAbsorbanciaTest : Fragment() {
     private val args: MedirAbsorbanciaTestArgs by navArgs()
     private lateinit var  myBitmap: Bitmap
     private lateinit var  prueba: Bitmap
+
+    // Variables para el sistema de calibración
+    private var isCalibrationMode: Boolean = false
 
     private var activarBotonContinuar : Boolean = false
 
@@ -164,6 +168,11 @@ class MedirAbsorbanciaTest : Fragment() {
         val sensitivity: Int = args.sensitivity
         val focalDistance: Float = args.focalDistance // Modificación 06/05/24
 
+        // Detectar si estamos en modo calibración - obtener del Bundle
+        isCalibrationMode = arguments?.getBoolean("isCalibrationMode", false) ?: false
+
+        // Cargar datos de calibración existentes
+        CalibrationData.loadCalibrationData(requireContext())
 
         /** --------- Interface elements -----------**/
         super.onViewCreated(view, savedInstanceState)
@@ -246,7 +255,6 @@ class MedirAbsorbanciaTest : Fragment() {
         var tita = 0f
         var titaRad : Double
 
-
         // Modificación 06/05/24 :
         val focalDistanceCm: Float = 1f/focalDistance*100f //Paso el valor en cm al que lee el programa
         //
@@ -256,69 +264,208 @@ class MedirAbsorbanciaTest : Fragment() {
         //val radioPromedios = 5f*h.toFloat()*w.toFloat()/12e6f
         val radioPromedios = 0
 
-
         /**--------------------------------------------------------------------------**/
-        /** Encontrando la recta      **/
+        /** LÓGICA DE CALIBRACIÓN VS MODO NORMAL    **/
         /**--------------------------------------------------------------------------**/
 
-        withContext(Dispatchers.Main){
-            textoProgreso.text="Detectando recta"
-        }
-
-        imageReader = ImageReader.newInstance(w, h, args.pixelFormat, 1)
-
-        previewSession.close()
-        delay(100L)
-        // makePreviewSession(tmax,sensitivity,focalDistance) // Modificación 06/05/24
-        makePreviewSession(exposureTime,sensitivity,focalDistanceCm)
-        delay(100L)
-        previewSession.close()
-        delay(100L)
-        picturesSession = createCaptureSession(camera, listOf(imageReader.surface), cameraHandler)
-        // takePhoto(tmax,sensitivity,focalDistanceCm,picturesSession).use{ result ->  // Modificación 06/05/24
-        takePhoto(exposureTime,sensitivity,focalDistanceCm,picturesSession).use{ result ->
-            buffer = result.image.planes[0].buffer
-            bytes = ByteArray(buffer.remaining()).apply {buffer.get(this)}
-            myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-            result.image.close()
-            picturesSession.close()
-            // makePreviewSession(tmax,sensitivity,focalDistance) // Modificación 06/05/24
-            makePreviewSession(exposureTime,sensitivity,focalDistanceCm)
-
-            if (testMode==true) {
-                m = doubleArrayOf((h/2f).toDouble(),0.toDouble())
+        if (isCalibrationMode) {
+            // =============== MODO CALIBRACIÓN ===============
+            withContext(Dispatchers.Main){
+                textoProgreso.text = "MODO CALIBRACIÓN\nDetectando recta"
             }
-            autorotar = Autorotar(myBitmap)
 
-            try
-            {
-                autorotar.encontrarRecta()
-                m = autorotar.m!!
-                listaMaximosX = autorotar.listaMaximosX!!
-                listaMaximosY = autorotar.listaMaximosY!!
-                posicionEnXOrdenCero = autorotar.posicionEnXOrdenCero?: 0
-                tita = autorotar.tita!!.toFloat()
-                titaRad = tita / 180 * kotlin.math.PI
-                for (k in radioPromedios.toInt() until posicionEnXOrdenCero-200) {
-                    listaXRectaAjuste.add(k)
-                    listaYRectaAjuste.add((k * m[1] + m[0]).toInt())
+            // Encontrar la recta como siempre en modo calibración
+            imageReader = ImageReader.newInstance(w, h, args.pixelFormat, 1)
+
+            previewSession.close()
+            delay(100L)
+            makePreviewSession(exposureTime,sensitivity,focalDistanceCm)
+            delay(100L)
+            previewSession.close()
+            delay(100L)
+            picturesSession = createCaptureSession(camera, listOf(imageReader.surface), cameraHandler)
+
+            takePhoto(exposureTime,sensitivity,focalDistanceCm,picturesSession).use{ result ->
+                buffer = result.image.planes[0].buffer
+                bytes = ByteArray(buffer.remaining()).apply {buffer.get(this)}
+                myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                result.image.close()
+                picturesSession.close()
+                makePreviewSession(exposureTime,sensitivity,focalDistanceCm)
+
+                if (testMode==true) {
+                    m = doubleArrayOf((h/2f).toDouble(),0.toDouble())
                 }
+                autorotar = Autorotar(myBitmap)
 
+                try {
+                    autorotar.encontrarRecta()
+                    m = autorotar.m!!
+                    listaMaximosX = autorotar.listaMaximosX!!
+                    listaMaximosY = autorotar.listaMaximosY!!
+                    posicionEnXOrdenCero = autorotar.posicionEnXOrdenCero?: 0
+                    tita = autorotar.tita!!.toFloat()
+                    titaRad = tita / 180 * kotlin.math.PI
+
+                    // Construir listaXRectaAjuste y listaYRectaAjuste
+                    for (k in radioPromedios.toInt() until posicionEnXOrdenCero-200) {
+                        listaXRectaAjuste.add(k)
+                        listaYRectaAjuste.add((k * m[1] + m[0]).toInt())
+                    }
+
+                    // Crear bitmap de prueba con la recta dibujada
+                    prueba = myBitmap.copy(myBitmap.getConfig(), true)
+                    for (i in 0 until prueba.width) {
+                        var j = (m[1] * i + m[0]).toInt()
+                        prueba.setPixel(i, j, Color.rgb(255, 255, 255))
+                    }
+                    for (maxIdx in 0 until listaMaximosX.size) {
+                        var i = listaMaximosX[maxIdx].toInt()
+                        var j = listaMaximosY[maxIdx].toInt()
+                        for (k in -5..5) {
+                            for (l in -5..5) {
+                                prueba.setPixel(i + k, j + l, Color.rgb(255, 0, 0))
+                            }
+                        }
+                    }
+                    var i = posicionEnXOrdenCero
+                    var j = (m[1] * i + m[0]).toInt()
+                    for (k in -10..10) {
+                        for (l in -10..10) {
+                            prueba.setPixel(i + k, j + l, Color.rgb(255, 0, 255))
+                        }
+                    }
+
+                    // Encontrar blueX1 para calibración
+                    withContext(Dispatchers.Main){
+                        textoProgreso.text = "CALIBRACIÓN\nBuscando orden difractivo"
+                    }
+
+                    // Buscar primer orden de difracción para calibración
+                    var n0 = 1
+                    val tolerancia = 1
+                    val normalizacion = (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
+                    var nB = 0
+                    var Q = 0
+
+                    while (n0 <= tolerancia) {
+                        var blueTest = mutableListOf<Int>()
+                        previewSession.close()
+                        delay(500L)
+                        picturesSession = createCaptureSession(camera, listOf(imageReader.surface), cameraHandler)
+                        takePhoto(previewExposureTime,sensitivity,focalDistanceCm,picturesSession).use{ result ->
+                            buffer = result.image.planes[0].buffer
+                            bytes = ByteArray(buffer.remaining()).apply {buffer.get(this)}
+                            myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                            result.image.close()
+                            picturesSession.close()
+                            makePreviewSession(previewExposureTime,sensitivity,focalDistanceCm)
+
+                            for (n in 0 until listaXRectaAjuste.lastIndex) {
+                                var i0 = listaXRectaAjuste[n]
+                                var j0 = listaYRectaAjuste[n]
+                                var b = 0f
+                                for (i in i0 - radioPromedios.toInt()..i0 + radioPromedios.toInt()) {
+                                    for (j in j0 - radioPromedios.toInt()..j0 + radioPromedios.toInt()) {
+                                        var aargb = myBitmap.getPixel(i, j)
+                                        b += Color.blue(aargb).toFloat() / normalizacion
+                                    }
+                                }
+                                blueTest.add(b.toInt())
+                            }
+                            encontrarMaximo(blueTest).run{
+                                Q=this[0]
+                                nB=listaXRectaAjuste[this[1]]
+                            }
+                        }
+                        n0 += 1
+                    }
+
+                    blueX1 = nB.toInt()
+
+                    // *** GUARDAR DATOS DE CALIBRACIÓN ***
+                    CalibrationData.saveCalibrationData(
+                        requireContext(),
+                        m, // recta (intercepto y pendiente)
+                        posicionEnXOrdenCero, // posición orden cero
+                        blueX1, // posición blueX1
+                        tita.toDouble() // ángulo tita
+                    )
+
+                    withContext(Dispatchers.Main){
+                        textoProgreso.isVisible = false
+                        barraProgreso.isVisible = false
+                        captureButton.isEnabled = true
+                        activarBotonContinuar = false // No permite continuar en modo calibración
+                        Toast.makeText(activity, "✅ CALIBRACIÓN COMPLETADA\nRecta guardada exitosamente", Toast.LENGTH_LONG).show()
+                    }
+
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main){
+                        textoProgreso.isVisible = false
+                        activarBotonContinuar = false
+                        captureButton.isEnabled = true
+                        barraProgreso.isVisible = false
+                        Toast.makeText(activity,"❌ Error en calibración: ${e.message}",Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+
+        } else {
+            // =============== MODO NORMAL (USAR CALIBRACIÓN) ===============
+
+            // Verificar si hay calibración disponible
+            if (!CalibrationData.isCalibrated(requireContext())) {
+                withContext(Dispatchers.Main){
+                    textoProgreso.isVisible = false
+                    barraProgreso.isVisible = false
+                    captureButton.isEnabled = true
+                    Toast.makeText(activity, "⚠️ NO HAY CALIBRACIÓN\nPor favor, ejecute primero una calibración", Toast.LENGTH_LONG).show()
+                }
+                return@launch
+            }
+
+            // Cargar datos de calibración
+            m = CalibrationData.getCalibrationLine(requireContext())!!
+            posicionEnXOrdenCero = CalibrationData.getPosicionOrdenCero(requireContext())!!
+            blueX1 = CalibrationData.getBlueX1(requireContext())!!
+            tita = CalibrationData.getTita(requireContext())!!.toFloat()
+
+            withContext(Dispatchers.Main){
+                textoProgreso.text = "USANDO CALIBRACIÓN\nRecta cargada ✅"
+            }
+
+            // Construir listaXRectaAjuste y listaYRectaAjuste con datos calibrados
+            for (k in radioPromedios.toInt() until posicionEnXOrdenCero-200) {
+                listaXRectaAjuste.add(k)
+                listaYRectaAjuste.add((k * m[1] + m[0]).toInt())
+            }
+
+            // Crear bitmap de visualización con recta calibrada
+            imageReader = ImageReader.newInstance(w, h, args.pixelFormat, 1)
+            previewSession.close()
+            delay(100L)
+            makePreviewSession(exposureTime,sensitivity,focalDistanceCm)
+            delay(100L)
+            previewSession.close()
+            delay(100L)
+            picturesSession = createCaptureSession(camera, listOf(imageReader.surface), cameraHandler)
+
+            takePhoto(exposureTime,sensitivity,focalDistanceCm,picturesSession).use{ result ->
+                buffer = result.image.planes[0].buffer
+                bytes = ByteArray(buffer.remaining()).apply {buffer.get(this)}
+                myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                result.image.close()
+                picturesSession.close()
+                makePreviewSession(exposureTime,sensitivity,focalDistanceCm)
+
+                // Crear bitmap de prueba con recta calibrada
                 prueba = myBitmap.copy(myBitmap.getConfig(), true)
                 for (i in 0 until prueba.width) {
-                    //println("i =  "+i)
                     var j = (m[1] * i + m[0]).toInt()
                     prueba.setPixel(i, j, Color.rgb(255, 255, 255))
                 }
-                for (m in 0 until listaMaximosX.size) {
-                    var i = listaMaximosX[m].toInt()
-                    var j = listaMaximosY[m].toInt()
-                    for (k in -5..5) {
-                        for (l in -5..5) {
-                            prueba.setPixel(i + k, j + l, Color.rgb(255, 0, 0))
-                        }
-                    }
-                }
+                // Marcar posición de orden cero
                 var i = posicionEnXOrdenCero
                 var j = (m[1] * i + m[0]).toInt()
                 for (k in -10..10) {
@@ -326,273 +473,174 @@ class MedirAbsorbanciaTest : Fragment() {
                         prueba.setPixel(i + k, j + l, Color.rgb(255, 0, 255))
                     }
                 }
-            }
-            catch (e: Exception)
-            {
-                withContext(Dispatchers.Main){
-                    textoProgreso.isVisible = false
-                    activarBotonContinuar = true
-                    captureButton.isEnabled = true
-                    barraProgreso.isVisible = false
-                    Toast.makeText(activity,"Error al encontrar la recta",Toast.LENGTH_SHORT).show()
+                // Marcar posición de blueX1
+                i = blueX1
+                for (jMark in (h.toFloat()/3f).toInt() until (2f*h.toFloat()/3f).toInt()) {
+                    for (k in -10..10) {
+                        for (l in -10..10) {
+                            prueba.setPixel(i + k, jMark + l, Color.rgb(255, 255, 255))
+                        }
+                    }
                 }
-                this.cancel()
             }
-        }
 
+            // CONTINUAR CON MEDICIÓN NORMAL usando datos calibrados
+            withContext(Dispatchers.Main){
+                textoProgreso.text = "Generando posiciones\ncon calibración"
+            }
 
-        /**--------------------------------------------------------------------------**/
-        /** Recta encontrada     **/
-        /**--------------------------------------------------------------------------**/
+            // Usar un rango amplio para medir todo el patrón
+            val leftLimit = radioPromedios.toInt()
+            val rightLimit = (posicionEnXOrdenCero - 200).coerceAtMost(w - 50)
 
-        var n0 = 1
-        val tolerancia = 1
-        val normalizacion = (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
+            listaIndices = (leftLimit until rightLimit).toList()
 
-        var redX1 : Int = 0
-        var greenX1 : Int = 0
+            launch {
+                val metric = sqrt(1 + pow(m[1], 2.0))
+                for (i in 0 until listaIndices.size) {
+                    listaConMetrica.add((i * metric + listaIndices[0]).toFloat())
+                }
+            }
 
-        var t1 = tmin
-        var t2 = (tmax).toLong()
-        var t = 0L
+            var L = listaIndices.size
+            grisesSinMuestra = zerosMatrix(L, numberOfPictures)
+            grisesConMuestra = zerosMatrix(L, numberOfPictures)
 
-        var nB = 0
-        var nR = 0
-        var nG = 0
+            redOrder1 = zeros(L)
+            greenOrder1 = zeros(L)
+            blueOrder1 = zeros(L)
+            redOrder2 = zeros(L)
+            greenOrder2 = zeros(L)
+            blueOrder2 = zeros(L)
 
-        withContext(Dispatchers.Main){
-            textoProgreso.text="Buscando primer \n orden difractivo"
-        }
+            /**--------------------------------------------------------------------------**/
+            /** Tomando fotos en vacío **/
+            /**--------------------------------------------------------------------------**/
 
-        /**--------------------------------------------------------------------------**/
-        /** Buscando primer orden de difraccíon     **/
-        /**--------------------------------------------------------------------------**/
+            withContext(Dispatchers.Main){
+                textoProgreso.text="Fotos en vacío"
+            }
 
-        var Q = 0
-        while (n0 <= tolerancia) {
-
-            var blueTest = mutableListOf<Int>()
-            var redTest = mutableListOf<Int>()
-            var greenTest = mutableListOf<Int>()
+            // Create a single optimized capture session for all photos
             previewSession.close()
-            delay(500L)
-            picturesSession = createCaptureSession(camera, listOf(imageReader.surface), cameraHandler)
-            takePhoto(previewExposureTime,sensitivity,focalDistanceCm,picturesSession).use{ result -> // Modificación 06/05/24
-                buffer = result.image.planes[0].buffer
-                bytes = ByteArray(buffer.remaining()).apply {buffer.get(this)}
-                myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                result.image.close()
-                picturesSession.close()
-                makePreviewSession(previewExposureTime,sensitivity,focalDistanceCm) // Modificación 06/05/24
-                for (n in 0 until listaXRectaAjuste.lastIndex) {
-                    var i0 = listaXRectaAjuste[n]
-                    var j0 = listaYRectaAjuste[n]
-                    var r = 0f
-                    var g = 0f
-                    var b = 0f
-                    for (i in i0 - radioPromedios.toInt()..i0 + radioPromedios.toInt()) {
-                        for (j in j0 - radioPromedios.toInt()..j0 + radioPromedios.toInt()) {
-                            var aargb = myBitmap.getPixel(i, j)
-                            r += Color.red(aargb).toFloat() / normalizacion
-                            g += Color.green(aargb).toFloat() / normalizacion
-                            b += Color.blue(aargb).toFloat() / normalizacion
-                        }
-                    }
-                    blueTest.add(b.toInt())
-                    redTest.add(r.toInt())
-                    greenTest.add(g.toInt())
-                }
-                encontrarMaximo(blueTest).run{
-                    Q=this[0]
-                    nB=listaXRectaAjuste[this[1]]
-                }
+            delay(100L)
+            picturesSession = createOptimizedCaptureSession()
 
-                n0 += 1
-                if (Q<250) {
-                    t1=t.toLong()
-                } else {
-                    t2=t.toLong()
-                }
-                println("BLUE  "+blueTest)
-                println("INDICES  "+listaXRectaAjuste)
-            }
+            var progress = 0f
+            repeat(numberOfPictures) {
+                takePhotoOptimized(exposureTime, sensitivity, focalDistanceCm).use { result ->
+                    // Process image on background thread
+                    async(Dispatchers.Default) {
+                        buffer = result.image.planes[0].buffer
+                        bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
+                        myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                        result.image.close()
 
-        }
+                        grisLoopActual = zeros(L)
 
-        withContext(Dispatchers.Main){
-            textoProgreso.text="Generando posiciones \n en píxeles"
-        }
-
-        blueX1 = nB.toInt()
-        redX1 = nR.toInt()
-        greenX1 = nG.toInt()
-        println("POSICION ORDEN CERO  "+posicionEnXOrdenCero)
-        println("MAXIMO ORDEN 1 RED  "+redX1)
-        println("MAXIMO ORDEN 1 BLUE  "+blueX1)
-        println("MAXIMO ORDEN 1 GREEN  "+greenX1)
-        var i = blueX1
-        for (j in (h.toFloat()/3f).toInt() until (2f*h.toFloat()/3f).toInt()) {
-            for (k in -10..10) {
-                for (l in -10..10) {
-                    prueba.setPixel(i + k, j + l, Color.rgb(255, 255, 255))
-                }
-            }
-        }
-
-        val redLeft = redX1-0.5*abs(posicionEnXOrdenCero-redX1)
-        val leftLimit : Int = (heavisideTheta(redLeft-radioPromedios)*redLeft+heavisideTheta(radioPromedios-redLeft)*radioPromedios).toInt()
-        val blueRight = blueX1+0.5*abs(posicionEnXOrdenCero-blueX1)
-        val rightLimit = (heavisideTheta(posicionEnXOrdenCero-200-blueRight)*blueRight+heavisideTheta(-posicionEnXOrdenCero+200+blueRight)*(posicionEnXOrdenCero-200)).toInt()
-
-        listaIndices = (leftLimit until rightLimit).toList()
-
-        launch {
-            val metric = sqrt(1 + pow(m[1], 2.0))
-            for (i in 0 until listaIndices.size) {
-                listaConMetrica.add((i * metric + listaIndices[0]).toFloat())
-            }
-        }
-
-        var L = listaIndices.size
-        grisesSinMuestra = zerosMatrix(L, numberOfPictures)
-        grisesConMuestra = zerosMatrix(L, numberOfPictures)
-
-
-        redOrder1 = zeros(L)
-        greenOrder1 = zeros(L)
-        blueOrder1 = zeros(L)
-        redOrder2 = zeros(L)
-        greenOrder2 = zeros(L)
-        blueOrder2 = zeros(L)
-
-        /**--------------------------------------------------------------------------**/
-        /** Tomando fotos en vacío **/
-        /**--------------------------------------------------------------------------**/
-
-        withContext(Dispatchers.Main){
-            textoProgreso.text="Fotos en vacío"
-        }
-
-        // Create a single optimized capture session for all photos
-        previewSession.close()
-        delay(100L) // Reduced delay
-        picturesSession = createOptimizedCaptureSession()
-
-        var progress = 0f
-        repeat(numberOfPictures) {
-            takePhotoOptimized(exposureTime, sensitivity, focalDistanceCm).use { result ->
-                // Process image on background thread
-                async(Dispatchers.Default) {
-                    buffer = result.image.planes[0].buffer
-                    bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
-                    myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    result.image.close()
-
-                    grisLoopActual = zeros(L)
-
-                    for (n in listaIndices.indices) {
-                        val i0 = listaIndices[n]
-                        val j0 = (listaIndices[n] * m[1] + m[0]).toInt()
-                        var r = 0f
-                        var g = 0f
-                        var b = 0f
-                        for (i in i0 - radioPromedios..i0 + radioPromedios) {
-                            for (j in j0 - radioPromedios..j0 + radioPromedios) {
-                                val aargb = myBitmap.getPixel(i, j)
-                                r += Color.red(aargb).toFloat() / normalizacion
-                                g += Color.green(aargb).toFloat() / normalizacion
-                                b += Color.blue(aargb).toFloat() / normalizacion
+                        for (n in listaIndices.indices) {
+                            val i0 = listaIndices[n]
+                            val j0 = (listaIndices[n] * m[1] + m[0]).toInt()
+                            var r = 0f
+                            var g = 0f
+                            var b = 0f
+                            for (i in i0 - radioPromedios..i0 + radioPromedios) {
+                                for (j in j0 - radioPromedios..j0 + radioPromedios) {
+                                    val aargb = myBitmap.getPixel(i, j)
+                                    r += Color.red(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
+                                    g += Color.green(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
+                                    b += Color.blue(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
+                                }
                             }
+                            redOrder1[n] += r/255f/numberOfPictures.toFloat()
+                            greenOrder1[n] += g/255f/numberOfPictures.toFloat()
+                            blueOrder1[n] += b/255f/numberOfPictures.toFloat()
+
+                            grisLoopActual[n] = (r + g + b)/255f/3f
                         }
-                        redOrder1[n] += r/255f/numberOfPictures.toFloat()
-                        greenOrder1[n] += g/255f/numberOfPictures.toFloat()
-                        blueOrder1[n] += b/255f/numberOfPictures.toFloat()
+                        grisesSinMuestra[fotoNro] = grisLoopActual
+                        fotoNro += 1
 
-                        grisLoopActual[n] = (r + g + b)/255f/3f
-                    }
-                    grisesSinMuestra[fotoNro] = grisLoopActual
-                    fotoNro += 1
-
-                    progress += 1f/numberOfPictures*100f
-                    withContext(Dispatchers.Main){
-                        textoProgreso.text="Progreso "+String.format("%.1f", progress)+"%"
-                    }
-                }.await()
+                        progress += 1f/numberOfPictures*100f
+                        withContext(Dispatchers.Main){
+                            textoProgreso.text="Progreso "+String.format("%.1f", progress)+"%"
+                        }
+                    }.await()
+                }
             }
-        }
 
-        withContext(Dispatchers.Main){
-            textoProgreso.text="Poner muestra"
-        }
+            withContext(Dispatchers.Main){
+                textoProgreso.text="Poner muestra"
+            }
 
-        // Wait for user to press botonReanudar instead of fixed delay
-        withContext(Dispatchers.Main) {
-            waitForResumeButton(botonReanudar)
-        }
+            // Wait for user to press botonReanudar instead of fixed delay
+            withContext(Dispatchers.Main) {
+                waitForResumeButton(botonReanudar)
+            }
 
-        /**--------------------------------------------------------------------------**/
-        /** Tomando fotos con muestra **/
-        /**--------------------------------------------------------------------------**/
+            /**--------------------------------------------------------------------------**/
+            /** Tomando fotos con muestra **/
+            /**--------------------------------------------------------------------------**/
 
-        withContext(Dispatchers.Main){
-            textoProgreso.text="Foto con muestra"
-        }
+            withContext(Dispatchers.Main){
+                textoProgreso.text="Foto con muestra"
+            }
 
-        // Reuse the same optimized session (no need to recreate)
-        progress = 0f
-        fotoNro = 0
-        repeat(numberOfPictures) {
-            takePhotoOptimized(exposureTime, sensitivity, focalDistanceCm).use { result ->
-                // Process image on background thread
-                async(Dispatchers.Default) {
-                    buffer = result.image.planes[0].buffer
-                    bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
-                    myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    result.image.close()
+            // Reuse the same optimized session (no need to recreate)
+            progress = 0f
+            fotoNro = 0
+            repeat(numberOfPictures) {
+                takePhotoOptimized(exposureTime, sensitivity, focalDistanceCm).use { result ->
+                    // Process image on background thread
+                    async(Dispatchers.Default) {
+                        buffer = result.image.planes[0].buffer
+                        bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
+                        myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                        result.image.close()
 
-                    for (n in listaIndices.indices) {
-                        val i0 = listaIndices[n]
-                        val j0 = (listaIndices[n] * m[1] + m[0]).toInt()
-                        var r = 0f
-                        var g = 0f
-                        var b = 0f
-                        for (i in i0 - radioPromedios..i0 + radioPromedios) {
-                            for (j in j0 - radioPromedios..j0 + radioPromedios) {
-                                val aargb = myBitmap.getPixel(i, j)
-                                r += Color.red(aargb).toFloat() / normalizacion
-                                g += Color.green(aargb).toFloat() / normalizacion
-                                b += Color.blue(aargb).toFloat() / normalizacion
+                        for (n in listaIndices.indices) {
+                            val i0 = listaIndices[n]
+                            val j0 = (listaIndices[n] * m[1] + m[0]).toInt()
+                            var r = 0f
+                            var g = 0f
+                            var b = 0f
+                            for (i in i0 - radioPromedios..i0 + radioPromedios) {
+                                for (j in j0 - radioPromedios..j0 + radioPromedios) {
+                                    val aargb = myBitmap.getPixel(i, j)
+                                    r += Color.red(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
+                                    g += Color.green(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
+                                    b += Color.blue(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
+                                }
                             }
+                            redOrder2[n] += r/255f/numberOfPictures.toFloat()
+                            greenOrder2[n] += g/255f/numberOfPictures.toFloat()
+                            blueOrder2[n] += b/255f/numberOfPictures.toFloat()
+
+                            grisLoopActual[n] = (r + g + b)/255f/3f
                         }
-                        redOrder2[n] += r/255f/numberOfPictures.toFloat()
-                        greenOrder2[n] += g/255f/numberOfPictures.toFloat()
-                        blueOrder2[n] += b/255f/numberOfPictures.toFloat()
 
-                        grisLoopActual[n] = (r + g + b)/255f/3f
-                    }
+                        grisesConMuestra[fotoNro] = grisLoopActual
+                        fotoNro += 1
 
-                    grisesConMuestra[fotoNro] = grisLoopActual
-                    fotoNro += 1
-
-                    progress += 1f/numberOfPictures*100f
-                    withContext(Dispatchers.Main){
-                        textoProgreso.text="Progreso "+String.format("%.1f", progress)+"%"
-                    }
-                }.await()
+                        progress += 1f/numberOfPictures*100f
+                        withContext(Dispatchers.Main){
+                            textoProgreso.text="Progreso "+String.format("%.1f", progress)+"%"
+                        }
+                    }.await()
+                }
             }
-        }
 
-        // Close optimized session and return to preview
-        picturesSession.close()
-        makePreviewSession(previewExposureTime,sensitivity,focalDistanceCm)
+            // Close optimized session and return to preview
+            picturesSession.close()
+            makePreviewSession(previewExposureTime,sensitivity,focalDistanceCm)
 
-
-
-        withContext(Dispatchers.Main){
-            textoProgreso.isVisible = false
-            activarBotonContinuar = true
-            captureButton.isEnabled = true
-            barraProgreso.isVisible = false
+            withContext(Dispatchers.Main){
+                textoProgreso.isVisible = false
+                activarBotonContinuar = true
+                captureButton.isEnabled = true
+                barraProgreso.isVisible = false
+                Toast.makeText(activity, "✅ Medición completada\nUsando calibración guardada", Toast.LENGTH_SHORT).show()
+            }
         }
 
     }

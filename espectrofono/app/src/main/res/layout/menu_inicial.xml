@@ -44,6 +44,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/GIFwave" />
 
+    <Button
+        android:id="@+id/BotonCalibracion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Calibración"
+        android:textSize="16sp"
+        android:background="#4CAF50"
+        android:textColor="#FFFFFF"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/MedirAbsorbanciaTest" />
+
     <ImageView
         android:id="@+id/LogoLoft"
         android:layout_width="70dp"
@@ -102,7 +115,7 @@
         android:textSize="14sp"
         app:layout_constraintEnd_toStartOf="@+id/sensibilidad"
         app:layout_constraintStart_toEndOf="@+id/nrofotos"
-        app:layout_constraintTop_toBottomOf="@+id/MedirAbsorbanciaTest" />
+        app:layout_constraintTop_toBottomOf="@+id/BotonCalibracion" />
 
     <EditText
         android:id="@id/sensibilidad"

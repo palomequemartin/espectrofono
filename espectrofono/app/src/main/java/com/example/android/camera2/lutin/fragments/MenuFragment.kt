@@ -22,6 +22,7 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.text.method.LinkMovementMethod
 import androidx.core.view.WindowInsetsCompat
+import com.example.android.camera2.lutin.CalibrationData
 
 class MenuFragment : Fragment() {
 
@@ -46,6 +47,7 @@ class MenuFragment : Fragment() {
         val titulo = view.findViewById<Button>(R.id.Titulo)
         val valoresPermitidos = view.findViewById<TextView>(R.id.valoresPermitidos)
         val medirAbsTest = view.findViewById<Button>(R.id.MedirAbsorbanciaTest)
+        val botonCalibracion = view.findViewById<Button>(R.id.BotonCalibracion)
         val numberOfPicturesTextView = view.findViewById<EditText>(R.id.nrofotos)
         val exposureTimeTextView = view.findViewById<EditText>(R.id.texposicion2)
         val sensitivityTextView = view.findViewById<EditText>(R.id.sensibilidad)
@@ -131,6 +133,73 @@ class MenuFragment : Fragment() {
         titulo.setOnClickListener {
             val dialog = VentanaInfo()
             dialog.show(childFragmentManager, "VentanaInfo")
+        }
+
+        botonCalibracion.setOnClickListener {
+            // Verificar que los campos estén completos para calibración
+            if (numberOfPicturesTextView.text.isNotEmpty() && exposureTimeTextView.text.isNotEmpty() &&
+                sensitivityTextView.text.isNotEmpty() && focalDistanceTextView.text.isNotEmpty()
+            ) {
+                val exposureTime = (exposureTimeTextView.text.toString().toFloat() * 1000000f).toLong()
+                val sensitivity = sensitivityTextView.text.toString().toInt()
+                val focalDistance = focalDistanceTextView.text.toString().toFloat()
+
+                // Validar parámetros para calibración
+                if (exposureTime < (tmin ?: 0L) || exposureTime > (tmax ?: (10000L * 1000000L))) {
+                    Toast.makeText(activity, "El tiempo de exposición no está en rango", Toast.LENGTH_SHORT).show()
+                } else if (sensitivity < sensMin || sensitivity > sensMax) {
+                    Toast.makeText(activity, "La sensibilidad no está en rango", Toast.LENGTH_SHORT).show()
+                } else if (focalDistance < 1f / minimumFocusDistance * 100f) {
+                    Toast.makeText(activity, "Aumentar distancia focal", Toast.LENGTH_SHORT).show()
+                } else {
+                    // Navegar al fragment de calibración con modo calibración activado
+                    val action = MenuFragmentDirections.actionMenuFragmentToMedirAbsorbanciaTest(
+                        args.cameraId,
+                        args.pixelFormat,
+                        1, // Solo una foto para calibración
+                        exposureTime,
+                        sensitivity,
+                        focalDistance
+                    )
+                    // Agregar parámetro adicional para modo calibración
+                    val bundle = action.arguments
+                    bundle.putBoolean("isCalibrationMode", true)
+
+                    Navigation.findNavController(requireActivity(), R.id.fragment_container)
+                        .navigate(R.id.actionMenuFragmentToMedirAbsorbanciaTest, bundle)
+                }
+            } else if (numberOfPicturesTextView.text.isNotEmpty() && exposureTimeTextView.text.isNotEmpty() &&
+                sensitivityTextView.text.isNotEmpty() && focalDistanceTextView.text.isEmpty()
+            ) {
+                val exposureTime = (exposureTimeTextView.text.toString().toFloat() * 1000000f).toLong()
+                val sensitivity = sensitivityTextView.text.toString().toInt()
+                val focalDistance = 1f / minimumFocusDistance * 100f
+
+                // Validar parámetros para calibración
+                if (exposureTime < (tmin ?: 0L) || exposureTime > (tmax ?: (10000L * 1000000L))) {
+                    Toast.makeText(activity, "El tiempo de exposición no está en rango", Toast.LENGTH_SHORT).show()
+                } else if (sensitivity < sensMin || sensitivity > sensMax) {
+                    Toast.makeText(activity, "La sensibilidad no está en rango", Toast.LENGTH_SHORT).show()
+                } else {
+                    // Navegar al fragment de calibración con modo calibración activado
+                    val action = MenuFragmentDirections.actionMenuFragmentToMedirAbsorbanciaTest(
+                        args.cameraId,
+                        args.pixelFormat,
+                        1, // Solo una foto para calibración
+                        exposureTime,
+                        sensitivity,
+                        focalDistance
+                    )
+                    // Agregar parámetro adicional para modo calibración
+                    val bundle = action.arguments
+                    bundle.putBoolean("isCalibrationMode", true)
+
+                    Navigation.findNavController(requireActivity(), R.id.fragment_container)
+                        .navigate(R.id.actionMenuFragmentToMedirAbsorbanciaTest, bundle)
+                }
+            } else {
+                Toast.makeText(activity, "Completar tiempo de exposición y sensibilidad para calibración", Toast.LENGTH_SHORT).show()
+            }
         }
 
         if (tmin != null && tmax != null) {
