@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 import sympy as sp
@@ -282,7 +284,7 @@ def intensidad_celular_calibrada(path,path_calibracion_intensidad,ldo_min,ldo_ma
 
     intensidad_por_bin_calibrada = []
     for m in range(len(bins)-1):
-        poly = Polynomial(popts[m])
+        poly = np.polynomial.Polynomial(popts[m])
         intensidad_por_bin_calibrada.append(poly(intensidad_por_bin[m]))
         
     intensidad_por_bin_calibrada = np.array(intensidad_por_bin_calibrada)
