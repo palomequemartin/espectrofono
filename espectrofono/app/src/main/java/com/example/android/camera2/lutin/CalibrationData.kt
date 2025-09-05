@@ -15,6 +15,12 @@ object CalibrationData {
     private const val KEY_BLUE_X1 = "blue_x1"
     private const val KEY_TITA = "tita"
 
+    // Nuevas claves para parámetros de medición
+    private const val KEY_NUMBER_OF_PICTURES = "number_of_pictures"
+    private const val KEY_EXPOSURE_TIME = "exposure_time"
+    private const val KEY_SENSITIVITY = "sensitivity"
+    private const val KEY_FOCAL_DISTANCE = "focal_distance"
+
     private var isCalibrated = false
     private var m: DoubleArray? = null
     private var posicionEnXOrdenCero: Int? = null
@@ -121,6 +127,46 @@ object CalibrationData {
     }
 
     /**
+     * Guarda los parámetros de medición
+     */
+    fun saveMeasurementParameters(
+        context: Context,
+        numberOfPictures: Int,
+        exposureTime: Float, // en ms
+        sensitivity: Int,
+        focalDistance: Float
+    ) {
+        val prefs: SharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val editor = prefs.edit()
+
+        editor.putInt(KEY_NUMBER_OF_PICTURES, numberOfPictures)
+        editor.putFloat(KEY_EXPOSURE_TIME, exposureTime)
+        editor.putInt(KEY_SENSITIVITY, sensitivity)
+        editor.putFloat(KEY_FOCAL_DISTANCE, focalDistance)
+
+        editor.apply()
+    }
+
+    /**
+     * Carga los parámetros de medición guardados
+     */
+    fun loadMeasurementParameters(context: Context): MeasurementParameters? {
+        val prefs: SharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+
+        // Verificar si existen parámetros guardados
+        if (!prefs.contains(KEY_NUMBER_OF_PICTURES)) {
+            return null
+        }
+
+        return MeasurementParameters(
+            numberOfPictures = prefs.getInt(KEY_NUMBER_OF_PICTURES, 10),
+            exposureTime = prefs.getFloat(KEY_EXPOSURE_TIME, 100f),
+            sensitivity = prefs.getInt(KEY_SENSITIVITY, 600),
+            focalDistance = prefs.getFloat(KEY_FOCAL_DISTANCE, 15f)
+        )
+    }
+
+    /**
      * Limpia los datos de calibración
      */
     fun clearCalibration(context: Context) {
@@ -136,4 +182,14 @@ object CalibrationData {
         blueX1 = null
         tita = null
     }
+
+    /**
+     * Data class para los parámetros de medición
+     */
+    data class MeasurementParameters(
+        val numberOfPictures: Int,
+        val exposureTime: Float, // en ms
+        val sensitivity: Int,
+        val focalDistance: Float
+    )
 }

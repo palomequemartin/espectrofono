@@ -76,6 +76,9 @@ class MenuFragment : Fragment() {
             }
         }
 
+        // Cargar parámetros guardados
+        loadSavedParameters(numberOfPicturesTextView, exposureTimeTextView, sensitivityTextView, focalDistanceTextView)
+
         medirAbsTest.setOnClickListener {
             if (numberOfPicturesTextView.text.isNotEmpty() && exposureTimeTextView.text.isNotEmpty() &&
                 sensitivityTextView.text.isNotEmpty() && focalDistanceTextView.text.isNotEmpty()
@@ -94,6 +97,9 @@ class MenuFragment : Fragment() {
                 } else if (focalDistance < 1f / minimumFocusDistance * 100f) {
                     Toast.makeText(activity, "Aumentar distancia focal", Toast.LENGTH_SHORT).show()
                 } else {
+                    // Guardar parámetros antes de navegar
+                    saveCurrentParameters(numberOfPictures, exposureTimeTextView.text.toString().toFloat(), sensitivity, focalDistance)
+
                     Navigation.findNavController(requireActivity(), R.id.fragment_container)
                         .navigate(
                             MenuFragmentDirections.actionMenuFragmentToMedirAbsorbanciaTest(
@@ -117,6 +123,9 @@ class MenuFragment : Fragment() {
                 } else if (sensitivity < sensMin || sensitivity > sensMax) {
                     Toast.makeText(activity, "La sensibilidad no está en rango", Toast.LENGTH_SHORT).show()
                 } else {
+                    // Guardar parámetros antes de navegar
+                    saveCurrentParameters(numberOfPictures, exposureTimeTextView.text.toString().toFloat(), sensitivity, focalDistance)
+
                     Navigation.findNavController(requireActivity(), R.id.fragment_container)
                         .navigate(
                             MenuFragmentDirections.actionMenuFragmentToMedirAbsorbanciaTest(
@@ -152,6 +161,9 @@ class MenuFragment : Fragment() {
                 } else if (focalDistance < 1f / minimumFocusDistance * 100f) {
                     Toast.makeText(activity, "Aumentar distancia focal", Toast.LENGTH_SHORT).show()
                 } else {
+                    // Guardar parámetros antes de navegar a calibración
+                    saveCurrentParameters(1, exposureTimeTextView.text.toString().toFloat(), sensitivity, focalDistance)
+
                     // Navegar al fragment de calibración con modo calibración activado
                     val action = MenuFragmentDirections.actionMenuFragmentToMedirAbsorbanciaTest(
                         args.cameraId,
@@ -181,6 +193,9 @@ class MenuFragment : Fragment() {
                 } else if (sensitivity < sensMin || sensitivity > sensMax) {
                     Toast.makeText(activity, "La sensibilidad no está en rango", Toast.LENGTH_SHORT).show()
                 } else {
+                    // Guardar parámetros antes de navegar a calibración
+                    saveCurrentParameters(1, exposureTimeTextView.text.toString().toFloat(), sensitivity, focalDistance)
+
                     // Navegar al fragment de calibración con modo calibración activado
                     val action = MenuFragmentDirections.actionMenuFragmentToMedirAbsorbanciaTest(
                         args.cameraId,
@@ -263,5 +278,48 @@ class MenuFragment : Fragment() {
     private fun orientationFunction(orientation: Int): Int {
         // Replace with your actual logic from OrientationLiveData
         return orientation
+    }
+
+    /**
+     * Carga los parámetros guardados en los campos del menú
+     */
+    private fun loadSavedParameters(
+        numberOfPicturesTextView: EditText,
+        exposureTimeTextView: EditText,
+        sensitivityTextView: EditText,
+        focalDistanceTextView: EditText
+    ) {
+        val savedParams = CalibrationData.loadMeasurementParameters(requireContext())
+        savedParams?.let { params ->
+            numberOfPicturesTextView.setText(params.numberOfPictures.toString())
+            exposureTimeTextView.setText(params.exposureTime.toString())
+            sensitivityTextView.setText(params.sensitivity.toString())
+            focalDistanceTextView.setText(params.focalDistance.toString())
+
+            // Mostrar mensaje informativo
+            Toast.makeText(
+                requireContext(),
+                "📋 Parámetros cargados desde la última sesión",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    /**
+     * Guarda los parámetros actuales
+     */
+    private fun saveCurrentParameters(
+        numberOfPictures: Int,
+        exposureTime: Float,
+        sensitivity: Int,
+        focalDistance: Float
+    ) {
+        CalibrationData.saveMeasurementParameters(
+            requireContext(),
+            numberOfPictures,
+            exposureTime,
+            sensitivity,
+            focalDistance
+        )
     }
 }
