@@ -187,3 +187,143 @@ def calibracion_ldo(n_pixel, gris, full_output=False):
     if full_output:
         return ldo, popt, pcov
     return ldo
+
+def gris_celular_bineado(path,ldo_min,ldo_max,step,popt_calibracion_ldo,version_vieja=False):
+    """Datafframe: Datos guardados del celular. Binea los datos entre las ldo y step dados. La intensidad 
+        de cada bin es el promedio de los valores de gris en ese bin y está normalizada."""
+    if version_vieja:
+        bins = np.arange(ldo_min, ldo_max + step, step)
+
+        df = pd.read_csv(path,skiprows=1, delimiter= '\t',
+                        names=['Nro. de pixel','R_blanco','G_blanco','B_blanco','R_muestra','G_muestra','B_muestra'])
+        
+        df['gris promedio'] = df.iloc[:, 1:].mean(axis=1)        
+
+        df['ldo'] = difraccion(df['Nro. de pixel'].to_numpy(), *popt_calibracion_ldo)
+        df = df.sort_values(by='ldo')
+        df = df[(df['ldo'] >= ldo_min) & (df['ldo'] <= ldo_max)]
+
+        intensidad_por_bin = []
+        for l in range(len(bins)-1):
+            intensidad_por_bin.append((df[(df['ldo'] >= bins[l]) & (df['ldo'] < bins[l+1])]['gris promedio'].mean()))
+
+        intensidad_por_bin = np.array(intensidad_por_bin)
+
+
+        return intensidad_por_bin
+
+    bins = np.arange(ldo_min, ldo_max + step, step)
+
+    df = pd.read_csv(path,skiprows=3,
+                     names=['Nro. de pixel','R_blanco','G_blanco','B_blanco','R_muestra','G_muestra','B_muestra'])
+    
+    df['gris promedio'] = df.iloc[:, 1:].mean(axis=1)        
+
+    df['ldo'] = difraccion(df['Nro. de pixel'].to_numpy(), *popt_calibracion_ldo)
+    df = df.sort_values(by='ldo')
+    df = df[(df['ldo'] >= ldo_min) & (df['ldo'] <= ldo_max)]
+
+    intensidad_por_bin = []
+    for l in range(len(bins)-1):
+        intensidad_por_bin.append((df[(df['ldo'] >= bins[l]) & (df['ldo'] < bins[l+1])]['gris promedio'].mean()))
+
+    intensidad_por_bin = np.array(intensidad_por_bin)
+
+
+    return intensidad_por_bin
+
+def intensidad_celular_calibrada(path,path_calibracion_intensidad,ldo_min,ldo_max,step,popt_calibracion_ldo,version_vieja):
+    """Datafframe: Datos guardados del celular. Binea los datos entre las ldo y step dados. La intensidad 
+        de cada bin es el promedio de los valores de gris en ese bin y está normalizada. Ajusta la intensidad de
+        cada bin según los parametros obtenidos."""
+    if version_vieja:
+        bins = np.arange(ldo_min, ldo_max + step, step)
+
+        df = pd.read_csv(path,skiprows=1, delimiter= '\t',
+                        names=['Nro. de pixel','R_blanco','G_blanco','B_blanco','R_muestra','G_muestra','B_muestra'])
+        
+        df['gris promedio'] = df.iloc[:, 1:].mean(axis=1)        
+
+        df['ldo'] = difraccion(df['Nro. de pixel'].to_numpy(), *popt_calibracion_ldo)
+        df = df.sort_values(by='ldo')
+        df = df[(df['ldo'] >= ldo_min) & (df['ldo'] <= ldo_max)]
+
+        intensidad_por_bin = []
+        for l in range(len(bins)-1):
+            intensidad_por_bin.append((df[(df['ldo'] >= bins[l]) & (df['ldo'] < bins[l+1])]['gris promedio'].mean()))
+
+        intensidad_por_bin = np.array(intensidad_por_bin)
+
+
+        return intensidad_por_bin
+    bins = np.arange(ldo_min, ldo_max + step, step)
+    df_calibracion_intensidad = pd.read_csv(path_calibracion_intensidad)
+    df = pd.read_csv(path,skiprows=3,
+                     names=['Nro. de pixel','R_blanco','G_blanco','B_blanco','R_muestra','G_muestra','B_muestra'])
+
+    df['gris promedio'] = df.iloc[:, 1:].mean(axis=1)        
+
+    df['ldo'] = difraccion(df['Nro. de pixel'].to_numpy(), *popt_calibracion_ldo)
+    df = df.sort_values(by='ldo')
+    df = df[(df['ldo'] >= ldo_min) & (df['ldo'] <= ldo_max)]
+
+    popts = []
+    for k in range(len(bins[:-1])):
+        ldo = bins[k]
+        popt_array = df_calibracion_intensidad.loc[df_calibracion_intensidad['Longitud de onda'] == ldo].values.flatten()[2:]
+        parameters = np.array(popt_array)
+        popts.append(parameters)
+
+    intensidad_por_bin = []
+    for l in range(len(bins)-1):
+        intensidad_por_bin.append((df[(df['ldo'] >= bins[l]) & (df['ldo'] < bins[l+1])]['Gris'].mean())/255)
+
+    intensidad_por_bin = np.array(intensidad_por_bin)
+
+    intensidad_por_bin_calibrada = []
+    for m in range(len(bins)-1):
+        poly = Polynomial(popts[m])
+        intensidad_por_bin_calibrada.append(poly(intensidad_por_bin[m]))
+        
+    intensidad_por_bin_calibrada = np.array(intensidad_por_bin_calibrada)
+
+    return intensidad_por_bin_calibrada
+
+def intensidad_thorlabs_binned(path,ldo_min, ldo_max, step):
+    """Binea los datos del espectrómetro Thorlabs entre las ldo y step dados.
+     La intensidad de cada bin es el promedio de los valores de intensidad en ese bin."""
+    intensidad_por_bin = []
+    bins = np.arange(ldo_min, ldo_max + step, step)
+
+    ldo_e, i_e = np.loadtxt(f'{path}',delimiter=',', unpack=True)
+    i_e = i_e[(ldo_e >= ldo_min) & (ldo_e <= ldo_max)]
+    ldo_e = ldo_e[(ldo_e >= ldo_min) & (ldo_e <= ldo_max)]
+    df_e  = pd.DataFrame({'ldo': ldo_e, 'i': i_e}) 
+
+    for l in range(len(bins)-1):
+        intensidad_por_bin.append((df_e[(df_e['ldo'] >= bins[l]) & (df_e['ldo'] < bins[l+1])]['i'].mean()))
+    intensidad_por_bin = np.array(intensidad_por_bin)
+    return intensidad_por_bin
+
+def plot_thorlabs_data(path, ldo_min, ldo_max,step):
+    """Grafica los datos del espectrómetro Thorlabs entre las ldo dadas."""
+    data = intensidad_thorlabs_binned(path,ldo_min,ldo_max,step)
+    bins = np.arange(ldo_min, ldo_max, step)
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(bins,data)
+    ax.set_xlabel('Longitud de onda (nm)')
+    ax.set_ylabel('Intensidad (u.a)')
+    ax.set_title(f'{path}')
+
+def plot_celular_data(path,ldo_min,ldo_max,step,calibrado = False):
+    """Grafica los datos del espectrómetro Thorlabs entre las ldo dadas."""
+    if calibrado:
+        data = intensidad_celular_calibrada(path,)
+    
+    data = intensidad_thorlabs_binned(path,ldo_min,ldo_max,step)
+    bins = np.arange(ldo_min, ldo_max, step)
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(bins,data)
+    ax.set_xlabel('Longitud de onda (nm)')
+    ax.set_ylabel('Intensidad (u.a)')
+    ax.set_title(f'{path}')
