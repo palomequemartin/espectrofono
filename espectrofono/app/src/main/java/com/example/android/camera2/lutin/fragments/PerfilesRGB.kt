@@ -327,23 +327,31 @@ class PerfilesRGB : Fragment() {
 
     private fun exportarDatos() = lifecycleScope.launch(Dispatchers.IO) {
         var datos = StringBuilder()
-        datos.append(StringBuilder("Nro. de pixel,R_blanco,G_blanco,B_blanco,R_muestra,G_muestra,B_muestra,Nro Fotos,Exposure Time,Sensitivity,Focal Distance"))
+        // Header con todos los campos
+        datos.append("Nro. de pixel,R_blanco,G_blanco,B_blanco,R_muestra,G_muestra,B_muestra,Nro Fotos,Exposure Time,Sensitivity,Focal Distance")
         datos.append("\n")
 
         for (i in args.listaIndices.indices) {
-            var fila = StringBuilder()
-            if (i == 0){
-                fila.append(args.listaIndices[i].toString()+
-                        ","+args.redOrder1[i].toString()+","+args.greenOrder1[i].toString()+","+args.blueOrder1[i].toString()+
-                        ","+args.redOrder2[i].toString()+","+args.greenOrder2[i].toString()+","+args.blueOrder2[i].toString()+
-                        ","+args.numberOfPictures.toString()+","+args.exposureTime.toString()+","+args.sensitivity.toString()+
-                    ","+args.focalDistance.toString())
-                datos.append(fila.append("\n"))
+            val fila = StringBuilder()
+            fila.append(args.listaIndices[i].toString())
+            fila.append(",").append(args.redOrder1[i].toString())
+            fila.append(",").append(args.greenOrder1[i].toString())
+            fila.append(",").append(args.blueOrder1[i].toString())
+            fila.append(",").append(args.redOrder2[i].toString())
+            fila.append(",").append(args.greenOrder2[i].toString())
+            fila.append(",").append(args.blueOrder2[i].toString())
+
+            // Solo agregar los parámetros en la primera fila
+            if (i == 0) {
+                fila.append(",").append(args.numberOfPictures.toString())
+                fila.append(",").append(args.exposureTime.toString())
+                fila.append(",").append(args.sensitivity.toString())
+                fila.append(",").append(args.focalDistance.toString())
+            } else {
+                // En las demás filas, agregar comas vacías para mantener la estructura
+                fila.append(",,,")
             }
 
-            fila.append(args.listaIndices[i].toString()+
-                    ","+args.redOrder1[i].toString()+","+args.greenOrder1[i].toString()+","+args.blueOrder1[i].toString()+
-                    ","+args.redOrder2[i].toString()+","+args.greenOrder2[i].toString()+","+args.blueOrder2[i].toString())
             datos.append(fila.append("\n"))
         }
 
