@@ -3,6 +3,7 @@ from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 import sympy as sp
 import pandas as pd
+import matplotlib.pyplot as plt
 
 def difraccion(p, a, b, p0):
     return 1 / ((a / (p0 - p)**2) + b)**0.5
@@ -246,7 +247,7 @@ def calibracion_ldo_pixel(nro_pixel,gris,full_output=False):
     ldo = calibracion_ldo(nro_pixel,gris)
     return ldo
 
-def cargar_datos(path):
+def cargar_datos(path,delimiter = '\t'):
     """
     Loads raw spectral data from a CSV file and calculates average grayscale values.
     
@@ -263,7 +264,7 @@ def cargar_datos(path):
     """
     # Load the CSV file into a pandas DataFrame
     # Expected format: columns include 'Nro. de pixel' and multiple grayscale measurement columns
-    df = pd.read_csv(path)
+    df = pd.read_csv(path,delimiter = delimiter)
     
     # Extract the pixel number column - this serves as the x-coordinate
     # for plotting spectral data (pixel position on the sensor)
