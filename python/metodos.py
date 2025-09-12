@@ -407,4 +407,16 @@ def plot_thorlabs_data(path, ldo_min, ldo_max,step):
     ax.set_ylabel('Intensidad (u.a)')
     ax.set_title(f'{path}')
 
+def plot_thorlabs(path,ldo_min,ldo_max):
+    """Grafica los datos del espectrómetro Thorlabs entre las ldo dadas."""
+    ldo_e, i_e = np.loadtxt(path,delimiter=',', unpack=True)
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(ldo_e,i_e)
+    ax.set_xlabel('Longitud de onda (nm)')
+    ax.set_ylabel('Intensidad (u.a)')
+    ax.set_title(f'{path}')
 
+def open_thorlabs_measurement(path,delimiter = ','):
+    """Abre los datos del espectrómetro Thorlabs."""
+    ldo_e, i_e = np.loadtxt(path,delimiter=delimiter, unpack=True)
+    return ldo_e, i_e
