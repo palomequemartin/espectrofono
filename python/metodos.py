@@ -398,7 +398,7 @@ def intensidad_thorlabs_binned(path,ldo_min, ldo_max, step):
     return intensidad_por_bin
 
 def plot_thorlabs_data(path, ldo_min, ldo_max,step):
-    """Grafica los datos del espectrómetro Thorlabs entre las ldo dadas."""
+    """Grafica los datos del espectrómetro Thorlabs entre las ldo dadas, binneando los datos."""
     data = intensidad_thorlabs_binned(path,ldo_min,ldo_max,step)
     bins = np.arange(ldo_min, ldo_max, step)
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -435,3 +435,10 @@ def load_LED_measurements(folder_path,filter_1,filter_2):
         value = filename.split(f'{filter_1}')[1].split(f'{filter_2}')[0]
         neutral_led_currents.append(value)
         file_with_values.append((filename,value))
+
+    return file_with_values
+
+def pixel_to_ldo(nro_pixel,popt_calibracion_ldo):
+    """Convierte de número de pixel a longitud de onda usando los parámetros de calibración dados."""
+    ldo = difraccion(nro_pixel, *popt_calibracion_ldo)
+    return ldo
