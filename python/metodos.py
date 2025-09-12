@@ -420,3 +420,18 @@ def open_thorlabs_measurement(path,delimiter = ','):
     """Abre los datos del espectrómetro Thorlabs."""
     ldo_e, i_e = np.loadtxt(path,delimiter=delimiter, unpack=True)
     return ldo_e, i_e
+
+def load_LED_measurements(folder_path,filter_1,filter_2):
+    """Carga los datos de las mediciones de los LEDs. Toma como input el path de la
+    carpeta donde se encuentran las mediciones y devuelve una lista con tuplas en cada elemento.
+    Cada tupla contiene el nombre del archivo y el valor de corriente del LED en mA.
+    Filter_1 y filter_2 son strings que indican el texto que está antes y después del valor de corriente"""
+    import os
+
+    neutral_led_currents = []
+    file_with_values = []
+    for filename in os.listdir(folder_path): #os.listdir() lista todos los archivos en el path dado
+    #De esta forma lee el archivo y guarda el valor de corriente sin importar el orden en el que acceda
+        value = filename.split(f'{filter_1}')[1].split(f'{filter_2}')[0]
+        neutral_led_currents.append(value)
+        file_with_values.append((filename,value))
