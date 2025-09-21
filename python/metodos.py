@@ -1,8 +1,13 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 import sympy as sp
 import pandas as pd
+
+
+def lineal(x, m, b):
+    return m * x + b
 
 def difraccion(p, a, b, p0):
     return 1 / ((a / (p0 - p)**2) + b)**0.5
@@ -109,7 +114,7 @@ def encontrar_picos(n_pixel, gris, umbral):
     # This region typically contains a single, well-defined peak
     # Uses scipy's find_peaks with basic parameters for automatic detection
     primer_pico, _ = find_peaks(gris[:cruces[0]], threshold=0.001, distance=len(gris[:cruces[0]]))
-    picos.append(primer_pico[0])
+    picos.append(n_pixel[primer_pico[0]])
     
     # Step 3: Find red spectral line peaks (regions 1-2 and 3-4)
     # These are typically sharp, well-defined peaks in the red part of the spectrum
@@ -125,7 +130,7 @@ def encontrar_picos(n_pixel, gris, umbral):
         
         # Find the peak as the simple maximum in this region
         # Add the starting index to convert back to original pixel coordinates
-        picos.append(np.argmax(y_cortado) + inicio)
+        picos.append(n_pixel[np.argmax(y_cortado) + inicio])
     
     # Step 4: Find green and blue spectral line peaks (regions 5-6 and 7-8)
     # These peaks are often broader and may require Gaussian fitting for accurate positioning
@@ -224,7 +229,7 @@ def encontrar_umbral_optimo(y_data, tolerancia=1):
     return mejor_umbral
 
 
-def calibracion_ldo(n_pixel, gris, full_output=False):
+def calibracion_ldo(n_pixel, gris):
     picos_thorlabs = np.array([453.6733242631141, 540.0395034709993, 615.1063232, 632.8643188, 649.3109741])[::-1]
     
     umbral = encontrar_umbral_optimo(gris)
@@ -233,11 +238,19 @@ def calibracion_ldo(n_pixel, gris, full_output=False):
     popt, pcov = curve_fit(difraccion, picos, picos_thorlabs, maxfev=1000000,
                            p0=[1.26777218, 6.78704522e-13, 2e3])
     
-    ldo = difraccion(n_pixel, *popt)
-    
-    if full_output:
-        return ldo, popt, pcov
-    return ldo
+    return popt
+
+def generar_espectro_thorlabs(corriente_azul, corriente_calido):
+    df = pd.read_csv('./espectro_leds.csv')
+    ldo = df['longitudes_de_onda'].to_numpy()
+    intensidad = []
+    for i in range(len(ldo)):
+        intensidad_azul = lineal(corriente_azul, df['pendiente_azul'][i], df['ordenada_azul'][i])
+        intensidad_calido = lineal(corriente_calido, df['pendiente_calido'][i], df['ordenada_calido'][i])
+        intensidad.append(intensidad_azul + intensidad_calido)
+
+    intensidad = np.array(intensidad)
+    return ldo, intensidad
 
 def calibracion_ldo_pixel(nro_pixel,gris,full_output=False):
     if full_output:
@@ -263,7 +276,7 @@ def cargar_datos(path):
     """
     # Load the CSV file into a pandas DataFrame
     # Expected format: columns include 'Nro. de pixel' and multiple grayscale measurement columns
-    df = pd.read_csv(path)
+    df = pd.read_csv(path, delimiter='\t')
     
     # Extract the pixel number column - this serves as the x-coordinate
     # for plotting spectral data (pixel position on the sensor)
@@ -373,7 +386,7 @@ def intensidad_celular_calibrada(path,path_calibracion_intensidad,ldo_min,ldo_ma
 
     intensidad_por_bin_calibrada = []
     for m in range(len(bins)-1):
-        poly = Polynomial(popts[m])
+        poly = np.polynomial.Polynomial(popts[m])
         intensidad_por_bin_calibrada.append(poly(intensidad_por_bin[m]))
         
     intensidad_por_bin_calibrada = np.array(intensidad_por_bin_calibrada)
