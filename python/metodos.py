@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, correlate
+from scipy.interpolate import interp1d
 import sympy as sp
 import pandas as pd
 
@@ -32,7 +33,6 @@ def propagacion(funcion, x, popt, pcov):
             error += derivadas[i]*derivadas[j]*pcov[i, j]*(2**(i!=j))
 
     return error
-
 
 def encontrar_cruces(y_data, umbral):
     """
@@ -99,68 +99,42 @@ def encontrar_picos(n_pixel, gris, umbral):
         Array of 5 peak positions (in pixel coordinates) corresponding to
         known spectral calibration lines
     """
-    # Convert inputs to numpy arrays for consistent handling
     n_pixel = np.array(n_pixel)
     gris = np.array(gris)
     
-    # Initialize list to store found peak positions
     picos = []
     
-    # Step 1: Find threshold crossings to segment the spectrum
-    # These crossings divide the spectrum into regions containing different spectral lines
     cruces = encontrar_cruces(gris, umbral)
     
-    # Step 2: Find the first peak (before the first threshold crossing)
-    # This region typically contains a single, well-defined peak
-    # Uses scipy's find_peaks with basic parameters for automatic detection
     primer_pico, _ = find_peaks(gris[:cruces[0]], threshold=0.001, distance=len(gris[:cruces[0]]))
     picos.append(n_pixel[primer_pico[0]])
     
-    # Step 3: Find red spectral line peaks (regions 1-2 and 3-4)
-    # These are typically sharp, well-defined peaks in the red part of the spectrum
-    # Uses simple maximum finding since these peaks are usually prominent
-    for i in [[0, 1], [2, 3]]:  # Process regions [cruces[0]:cruces[1]] and [cruces[2]:cruces[3]]
-        # Define the boundaries of the current spectral region
-        inicio = cruces[i[0]]  # Start index of the region
-        final = cruces[i[1]] + 1  # End index of the region (inclusive)
+    for i in [[0, 1], [2, 3]]:
         
-        # Extract the pixel numbers and intensity values for this region
+        inicio = cruces[i[0]]
+        final = cruces[i[1]] + 1
+        
         x_cortado = n_pixel[inicio:final]
         y_cortado = gris[inicio:final]
         
-        # Find the peak as the simple maximum in this region
-        # Add the starting index to convert back to original pixel coordinates
         picos.append(n_pixel[np.argmax(y_cortado) + inicio])
     
-    # Step 4: Find green and blue spectral line peaks (regions 5-6 and 7-8)
-    # These peaks are often broader and may require Gaussian fitting for accurate positioning
-    for i in [[4, 5], [6, 7]]:  # Process regions [cruces[4]:cruces[5]] and [cruces[6]:cruces[7]]
-        # Define the boundaries of the current spectral region
-        inicio = cruces[i[0]]  # Start index of the region
-        final = cruces[i[1]] + 1  # End index of the region (inclusive)
-        
-        # Extract the pixel numbers and intensity values for this region
+    for i in [[4, 5], [6, 7]]:
+        inicio = cruces[i[0]]
+        final = cruces[i[1]] + 1
+
         x_cortado = n_pixel[inicio:final]
         y_cortado = gris[inicio:final]
+        
+        p0 = [np.max(y_cortado) - np.min(y_cortado),
+              x_cortado[np.argmax(y_cortado)],
+              (x_cortado[-1] - x_cortado[0]) / 4,
+              np.min(y_cortado)]
 
-        # Set up initial parameters for Gaussian fitting
-        # These provide reasonable starting guesses for the optimization
-        p0 = [np.max(y_cortado) - np.min(y_cortado),  # Amplitude: peak height above baseline
-              x_cortado[np.argmax(y_cortado)],          # Mean: x-position of maximum (initial guess)
-              (x_cortado[-1] - x_cortado[0]) / 4,       # Sigma: width estimate (1/4 of region width)
-              np.min(y_cortado)]                        # Offset: baseline level
-
-        # Perform Gaussian curve fitting to find precise peak position
-        # This is more accurate than simple maximum finding for broader peaks
         popt, pcov = curve_fit(gaussiana, x_cortado, y_cortado, p0=p0, maxfev=1000)
         
-        # Extract the fitted mean (peak center position) from the optimized parameters
-        # popt[1] corresponds to the 'media' parameter of the Gaussian function
-        picos.append(popt[1])  # Guardar la media (posición del pico)
-
-    # Return the array of 5 peak positions for calibration
-    # These correspond to known wavelengths and will be used to establish
-    # the pixel-to-wavelength relationship
+        picos.append(popt[1])
+        
     return np.array(picos)
 
 def encontrar_umbral_optimo(y_data, tolerancia=1):
@@ -182,7 +156,7 @@ def encontrar_umbral_optimo(y_data, tolerancia=1):
     y_array = np.array(y_data)
     
     diferencias_objetivo = np.array([23, 14, 23, 68, 132, 52, 61])
-    n_cruces_objetivo = len(diferencias_objetivo) + 1  # +1 porque n diferencias = n-1 cruces
+    n_cruces_objetivo = len(diferencias_objetivo) + 1
     
     umbral_min = 0.01
     umbral_max = 0.8
@@ -196,15 +170,11 @@ def encontrar_umbral_optimo(y_data, tolerancia=1):
     for umbral in umbrales:
         cruces = encontrar_cruces(y_array, umbral)
         
-        # Verificar que tenemos el número correcto de cruces
         if len(cruces) != n_cruces_objetivo:
             continue
-            
-        # Calcular diferencias entre cruces consecutivos
+        
         diferencias_actuales = np.diff(cruces)
         
-        # Calcular la puntuación basada en qué tan cerca están las diferencias del objetivo
-        # Usamos error cuadrático medio normalizado
         error_relativo = np.abs(diferencias_actuales - diferencias_objetivo) / diferencias_objetivo
         puntuacion = np.mean(error_relativo)
         
@@ -215,19 +185,16 @@ def encontrar_umbral_optimo(y_data, tolerancia=1):
             'puntuacion': puntuacion
         })
         
-        # Si todas las diferencias están dentro de la tolerancia, consideramos este umbral
         if np.all(error_relativo <= tolerancia) and puntuacion < mejor_puntuacion:
             mejor_puntuacion = puntuacion
             mejor_umbral = umbral
     
     if mejor_umbral is None and candidatos:
-        # Si no encontramos un umbral perfecto, devolvemos el mejor candidato
         mejor_candidato = min(candidatos, key=lambda x: x['puntuacion'])
         mejor_umbral = mejor_candidato['umbral']
         mejor_puntuacion = mejor_candidato['puntuacion']
     
     return mejor_umbral
-
 
 def calibracion_ldo(n_pixel, gris):
     picos_thorlabs = np.array([453.6733242631141, 540.0395034709993, 615.1063232, 632.8643188, 649.3109741])[::-1]
@@ -454,3 +421,142 @@ def pixel_to_ldo(nro_pixel,popt_calibracion_ldo):
     """Convierte de número de pixel a longitud de onda usando los parámetros de calibración dados."""
     ldo = difraccion(nro_pixel, *popt_calibracion_ldo)
     return ldo
+
+def binear_intensidad(ldo, intensidad, bins):
+    intensidad_bineada = np.zeros(len(bins) - 1)
+    for i in range(len(bins) - 1):
+        intensidad_bineada[i] = np.mean(intensidad[(ldo >= bins[i]) & (ldo < bins[i + 1])])
+    return intensidad_bineada
+
+def generar_archivo_calibracion_intensidad(corrientes_azul, corrientes_calido, ldos, grises, step, deg, ldo_min=350, ldo_max=700):
+    
+    corr_i_list = []
+    corr_ldo_list = []
+    for i in range(len(corrientes_azul)):
+        ldo = ldos[i]
+        gris = grises[i]
+        
+        ldo_thorlabs, intensidad_thorlabs = generar_espectro_thorlabs(corrientes_azul[i], corrientes_calido[i])
+        corr_i = np.mean(gris[ldo >= ldo_min][:20]) - np.mean(intensidad_thorlabs[ldo_thorlabs >= ldo_min][:20])
+        corr_i_list.append(corr_i)
+        
+        corr_ldo = np.max(ldo[(ldo >= 400) & (ldo <= 500)]) - np.max(ldo_thorlabs[(ldo_thorlabs >= 425) & (ldo_thorlabs <= 475)])
+        corr_ldo_list.append(corr_ldo)
+    corr_i = np.mean(corr_i_list)
+    corr_ldo = np.mean(corr_ldo_list)
+    # print(corr_ldo)
+    corr_i = 0
+    corr_ldo = 0
+    
+    bins = np.arange(ldo_min, ldo_max + step, step)
+    
+    intensidades_thorlabs = []
+    intensidades_celular = []
+    for i in range(len(corrientes_azul)):
+        ldo_thorlabs, intensidad_thorlabs = generar_espectro_thorlabs(corrientes_azul[i], corrientes_calido[i])
+        # intensidad_thorlabs /= np.max(intensidad_thorlabs)
+
+        intensidad_thorlabs_bineada = binear_intensidad(ldo_thorlabs, intensidad_thorlabs, bins)
+        intensidades_thorlabs.append(intensidad_thorlabs_bineada)
+        
+        intensidad_celular_bineada = binear_intensidad(ldos[i], grises[i] - corr_i, bins)
+        intensidades_celular.append(intensidad_celular_bineada)
+        
+    intensidades_thorlabs = np.array(intensidades_thorlabs).T
+    intensidades_celular = np.array(intensidades_celular).T
+    
+    popts = []
+    # popts_grafico = []
+    # i_celu_grafico = []   
+    # i_thorlabs_grafico = []
+    for i in range(len(bins) - 1):
+        popt, pcov = np.polyfit(intensidades_celular[i], intensidades_thorlabs[i],
+                                deg=deg, cov=True)
+        popts.append(popt)
+        
+        # esto es re cualquiera, me lo pidio gaby
+    #     if bins[i] == 420 or bins[i] == 520 or bins[i] == 620:
+    #         popts_grafico.append(popt)
+    #         i_celu_grafico.append(intensidades_celular[i])
+    #         i_thorlabs_grafico.append(intensidades_thorlabs[i])
+    
+    # fig, ax = plt.subplots(figsize=(12, 6))
+    # for i in range(len(i_celu_grafico)):
+    #     ax.plot(i_celu_grafico[i], i_thorlabs_grafico[i], marker='o', ls='', color=['r', 'g', 'b'][i], label=f'Datos {[420,520,620][i]} nm')
+    #     x_fit = np.linspace(np.min(i_celu_grafico[i]), np.max(i_celu_grafico[i]), 100)
+    #     y_fit = np.poly1d(popts_grafico[i])(x_fit)
+    #     ax.plot(x_fit, y_fit, color=['r', 'g', 'b'][i], label=f'Ajuste {[420,520,620][i]} nm')
+    # ax.set_xlabel('Nivel de gris (u.a.)')
+    # ax.set_ylabel('Intensidad Thorlabs (u.a.)')
+    # ax.grid(ls=':')
+    # ax.legend()
+    # plt.show()
+        
+
+    df = pd.DataFrame({'longitudes_de_onda': bins[:-1]})
+    for i, ps in enumerate(np.array(popts).T):
+        df[f'coeficiente_{i}'] = ps
+    df.to_csv(f'./CALIBRACION_INTENSIDAD.csv', index=False)
+
+def cargar_calibracion_intensidad(n_pixel, gris, popt_ldo, path='./CALIBRACION_INTENSIDAD.csv'):
+    ldo = difraccion(n_pixel, *popt_ldo)
+    
+    df_intensidad = pd.read_csv(path)
+    bins = df_intensidad['longitudes_de_onda'].to_numpy()
+    
+    gris_bineado = binear_intensidad(ldo, gris, bins)
+    
+    intensidad_calibrada = []
+    for k in range(len(bins) - 1):
+        intensidad_calibrada.append(np.poly1d(df_intensidad.iloc[k, 1:].to_numpy())(gris_bineado[k]))
+    
+    intensidad_calibrada = promediar(intensidad_calibrada, 2, 2)
+    
+    return bins[:-1], np.array(intensidad_calibrada)
+
+def promediar(datos, n_promediar=2, n_repeticiones=2):
+    
+    n_datos = len(datos)
+    datos_promediados_1 = datos.copy()
+    for _ in range(n_repeticiones):
+        datos_promediados_2 = []
+        for i in range(n_datos):
+            inicio = max(0, i - n_promediar)
+            fin = min(n_datos, i + n_promediar + 1)
+            datos_promediados_2.append(np.mean(datos_promediados_1[inicio:fin]))
+        datos_promediados_1 = np.array(datos_promediados_2)
+
+    return np.array(datos_promediados_1)
+
+def filtrar_ruido_fft(x, y, cutoff_freq=0.1):
+    """
+    Filtra ruido de alta frecuencia usando transformada de Fourier.
+    
+    Parameters:
+    -----------
+    x : array_like
+        Array de coordenadas x (píxeles o longitud de onda)
+    y : array_like  
+        Array de intensidades con ruido
+    cutoff_freq : float, optional
+        Frecuencia de corte normalizada (0-1), default 0.1
+        
+    Returns:
+    --------
+    y_filtered : ndarray
+        Array de intensidades filtradas
+    """
+    # Transformada de Fourier
+    fft_y = np.fft.fft(y)
+    frequencies = np.fft.fftfreq(len(y))
+    
+    # Crear filtro pasa-bajos
+    filter_mask = np.abs(frequencies) <= cutoff_freq
+    
+    # Aplicar filtro
+    fft_filtered = fft_y * filter_mask
+    
+    # Transformada inversa
+    y_filtered = np.real(np.fft.ifft(fft_filtered))
+    
+    return y_filtered
