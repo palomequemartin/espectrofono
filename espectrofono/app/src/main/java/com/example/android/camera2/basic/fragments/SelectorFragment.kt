@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.android.camera2.lutin.fragments
+package com.example.android.camera2.basic.fragments
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -32,7 +32,8 @@ import androidx.navigation.Navigation
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.android.camera.utils.GenericListAdapter
-import com.luciocoro.lutin.R
+import com.example.android.camera.utils.OrientationLiveData
+import com.example.android.camera2.basic.R
 //import kotlinx.android.synthetic.main.menu_inicial.*
 //import kotlinx.android.synthetic.main.selectorlayout.*
 import java.util.*

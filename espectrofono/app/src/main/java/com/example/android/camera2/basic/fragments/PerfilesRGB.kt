@@ -1,28 +1,55 @@
-package com.example.android.camera2.lutin.fragments
+package com.example.android.camera2.basic.fragments
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.*
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.hardware.Camera.Parameters.FOCUS_MODE_FIXED
 import android.hardware.camera2.*
+import android.media.Image
+import android.media.ImageReader
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.HandlerThread
+import android.util.Log
 import android.view.*
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.graphics.rotationMatrix
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.navigation.fragment.navArgs
+import com.example.android.camera.utils.AutoFitSurfaceView
 import com.example.android.camera.utils.OrientationLiveData
-import com.luciocoro.lutin.R
+import com.example.android.camera.utils.computeExifOrientation
+import com.example.android.camera.utils.getPreviewOutputSize
+import com.example.android.camera2.basic.CameraActivity
+import com.example.android.camera2.basic.R
+import com.example.calibrarlongituddeonda.Autorotar
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.TimeoutException
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlin.math.*
+import kotlin.properties.Delegates
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraCharacteristics.*
 import android.net.Uri
 import android.widget.*
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContentProviderCompat.requireContext
+import androidx.core.content.ContextCompat.startActivity
 import androidx.core.content.FileProvider
-import androidx.navigation.NavOptions
-import androidx.navigation.fragment.findNavController
+import androidx.core.graphics.drawable.toAdaptiveIcon
+import androidx.core.view.isVisible
 import com.jjoe64.graphview.GraphView
 import com.jjoe64.graphview.series.DataPoint
 import com.jjoe64.graphview.series.LineGraphSeries
@@ -31,6 +58,9 @@ import com.jjoe64.graphview.series.LineGraphSeries
 //import kotlinx.android.synthetic.main.fragment_medir_absorbancia_test.*
 import kotlinx.coroutines.*
 import java.io.*
+import java.lang.Math.pow
+import java.lang.Runnable
+import java.nio.ByteBuffer
 
 
 class PerfilesRGB : Fragment() {
@@ -72,16 +102,13 @@ class PerfilesRGB : Fragment() {
     @SuppressLint("MissingPermission")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 
-//        relativeOrientation = OrientationLiveData(requireContext(), characteristics).apply {
-//            observe(viewLifecycleOwner, Observer {
-//                    orientation -> view.rotation = orientationFunction(orientation).toFloat()
-//            })
-//        }
-        /** Inicia los botones de guardado y continuar */
+        relativeOrientation = OrientationLiveData(requireContext(), characteristics).apply {
+            observe(viewLifecycleOwner, Observer {
+                    orientation -> view.rotation = orientationFunction(orientation).toFloat()
+            })
+        }
+
         val botonGuardar : ImageButton = view.findViewById(R.id.exportarDatos)
-        val botonContinuar : ImageButton = view.findViewById(R.id.botonContinuar)
-        val botonGuardarGrises : ImageButton = view.findViewById(R.id.exportarGrises)
-        val botonToFigures : ImageButton = view.findViewById(R.id.toFigures)
 
         val switchRojo: Switch = view.findViewById(R.id.switchRojo)
         val switchVerde: Switch = view.findViewById(R.id.switchVerde)
@@ -98,43 +125,10 @@ class PerfilesRGB : Fragment() {
         var blueSeriesDone = true
         var graySeriesDone = false
 
-
-        val grisesSinMuestra = args.grisesSinMuestra.matrix
-        val grisesConMuestra = args.grisesConMuestra.matrix
-
-
         super.onViewCreated(view, savedInstanceState)
-
-        /** Asigna acciones a los botones */
 
         botonGuardar.setOnClickListener(){
             exportarDatos()
-        }
-
-        botonToFigures.setOnClickListener {
-            // Use Safe Args to create the action and pass arguments
-            Navigation.run {
-                findNavController(requireActivity(), R.id.fragment_container).navigate(
-                    PerfilesRGBDirections.actionPerfilesToFiguresFragment(
-                        args.cameraId, args.blueOrder1, args.redOrder1,
-                        args.greenOrder1,args.grisesSinMuestra, args.grisesConMuestra,
-                        args.blueOrder2, args.redOrder2,args.greenOrder2,
-                        args.listaIndices,args.posicionEnXOrden0,args.posicionEnXMaxBlue1,
-                        args.numberOfPictures,args.exposureTime,args.sensitivity,
-                        args.focalDistance
-                    )
-                )
-            }
-        }
-
-        botonContinuar.setOnClickListener {
-            findNavController().navigate(
-                R.id.permissions_fragment,
-                null,
-                NavOptions.Builder()
-                    .setPopUpTo(findNavController().graph.startDestinationId, true)
-                    .build()
-            )
         }
 
         graphview = view.findViewById(R.id.graph)
@@ -151,11 +145,6 @@ class PerfilesRGB : Fragment() {
                 val greenOrder2 = args.greenOrder2
                 val posicionEnXOrden0 = args.posicionEnXOrden0
                 val blueX1 = args.posicionEnXMaxBlue1
-
-
-
-
-//
 
                 println("POS MAX BLUE 1 = "+blueX1)
 
@@ -318,47 +307,20 @@ class PerfilesRGB : Fragment() {
                 }
             }
         }
-
-        botonGuardarGrises.setOnClickListener(){
-            exportarGrises(grisesSinMuestra,"SinMuestra")
-            exportarGrises(grisesConMuestra,"ConMuestra")
-        }
     }
 
-    private fun exportarDatos() = lifecycleScope.launch(Dispatchers.IO) {
+    fun exportarDatos() = lifecycleScope.launch(Dispatchers.IO) {
         var datos = StringBuilder()
-        // Header con todos los campos
-        datos.append("Nro. de pixel,R_blanco,G_blanco,B_blanco,R_muestra,G_muestra,B_muestra,Nro Fotos,Exposure Time,Sensitivity,Focal Distance")
-        datos.append("\n")
-
+        datos.append(StringBuilder("Nro. de pixel\tR_blanco\tG_blanco\tB_blanco\tR_muestra\tG_muestra\tB_muestra\n"))
         for (i in args.listaIndices.indices) {
-            val fila = StringBuilder()
-            fila.append(args.listaIndices[i].toString())
-            fila.append(",").append(args.redOrder1[i].toString())
-            fila.append(",").append(args.greenOrder1[i].toString())
-            fila.append(",").append(args.blueOrder1[i].toString())
-            fila.append(",").append(args.redOrder2[i].toString())
-            fila.append(",").append(args.greenOrder2[i].toString())
-            fila.append(",").append(args.blueOrder2[i].toString())
-
-            // Solo agregar los parámetros en la primera fila
-            if (i == 0) {
-                fila.append(",").append(args.numberOfPictures.toString())
-                fila.append(",").append(args.exposureTime.toString())
-                fila.append(",").append(args.sensitivity.toString())
-                fila.append(",").append(args.focalDistance.toString())
-            } else {
-                // En las demás filas, agregar comas vacías para mantener la estructura
-                fila.append(",,,")
-            }
-
+            var fila = StringBuilder()
+            fila.append(args.listaIndices[i].toString()+
+                    "\t"+args.redOrder1[i].toString()+"\t"+args.greenOrder1[i].toString()+"\t"+args.blueOrder1[i].toString()+
+                    "\t"+args.redOrder2[i].toString()+"\t"+args.greenOrder2[i].toString()+"\t"+args.blueOrder2[i].toString())
             datos.append(fila.append("\n"))
         }
-
         var datazo = (datos.toString()).toByteArray()
-        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val nombre = "androidAppData_$timestamp.csv"
-
+        var nombre = "androidAppData.txt"
         try {
             //guardo el archivo pero no puedo acceder
             val out: OutputStream? = context?.openFileOutput(nombre, Context.MODE_PRIVATE)
@@ -369,90 +331,20 @@ class PerfilesRGB : Fragment() {
             val filelocation: File = File(context.filesDir, nombre)
             val path: Uri = FileProvider.getUriForFile(
                     context,
-                    "com.luciocoro.lutin.fileprovider",
+                    "com.example.android.camera2.basic.fileprovider",
                     filelocation
             )
             val fileIntent: Intent = Intent(Intent.ACTION_SEND)
-            fileIntent.setType("text/csv")
-            fileIntent.putExtra(Intent.EXTRA_SUBJECT, "androidAppData.csv")
+            fileIntent.setType("text/txt")
+            fileIntent.putExtra(Intent.EXTRA_SUBJECT, "androidAppData.txt")
             fileIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             fileIntent.putExtra(Intent.EXTRA_STREAM, path)
             startActivity(Intent.createChooser(fileIntent, "send mail"))
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(requireContext(), "Error exporting data: ${e.message}", Toast.LENGTH_LONG).show()
         }
 
 
-    }
-
-    private fun exportarGrises(matrix: MutableList<MutableList<Float>>, name : String) = lifecycleScope.launch(Dispatchers.IO) {
-        try {
-            // Create StringBuilder for CSV content
-            val datos = StringBuilder()
-
-            // Determine the number of rows in the CSV (max length of any matrix row)
-            val maxRowLength = matrix.maxOfOrNull { it.size } ?: 0
-            if (maxRowLength == 0) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(requireContext(), "Matrix is empty", Toast.LENGTH_LONG).show()
-                }
-                return@launch
-            }
-
-            // Build CSV: each matrix row becomes a column
-            for (i in 0 until maxRowLength) {
-                val row = StringBuilder()
-                // Iterate over each matrix row (CSV column)
-                matrix.forEachIndexed { index, matrixRow ->
-                    // Get the element at position i, or 0.0f if index i doesn't exist
-                    val value = if (i < matrixRow.size) matrixRow[i].toString() else "0.0"
-                    row.append(value)
-                    // Add comma unless it's the last column
-                    if (index < matrix.size - 1) row.append(",")
-                }
-                datos.append(row.append("\n"))
-            }
-
-            // Convert to ByteArray for file writing
-            val datazo = datos.toString().toByteArray()
-
-            // Generate timestamped filename
-            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val nombre = "matrixData$name$timestamp.csv"
-
-            // Save file to internal storage
-            val out: OutputStream? = context?.openFileOutput(nombre, Context.MODE_PRIVATE)
-            out?.write(datazo)
-            out?.close()
-
-            // Prepare file for sharing
-            val context: Context = requireContext().applicationContext
-            val fileLocation: File = File(context.filesDir, nombre)
-            val path: Uri = FileProvider.getUriForFile(
-                context,
-                "com.luciocoro.lutin.fileprovider",
-                fileLocation
-            )
-
-            // Create sharing intent
-            val fileIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/csv"
-                putExtra(Intent.EXTRA_SUBJECT, "matrixData$name$timestamp.csv")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                putExtra(Intent.EXTRA_STREAM, path)
-            }
-
-            // Launch chooser on main thread
-            withContext(Dispatchers.Main) {
-                startActivity(Intent.createChooser(fileIntent, "Send CSV"))
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            withContext(Dispatchers.Main) {
-                Toast.makeText(requireContext(), "Error exporting data: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-        }
     }
 
     private fun makeGraph(graph : GraphView, series : LineGraphSeries<DataPoint>,action : String) = lifecycleScope.launch(Dispatchers.IO){
@@ -491,3 +383,4 @@ fun beta(p0: Float ,lambda0: Float,f: Float,n : Int): Float {
 fun gris(R: Float, G: Float, B: Float, gamma: Float): Float{
    return (0.3333f*R+0.3333f*G+0.3333f*B)
 }
+

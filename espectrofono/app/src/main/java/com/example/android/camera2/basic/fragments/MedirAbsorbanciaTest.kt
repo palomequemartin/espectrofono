@@ -1,8 +1,13 @@
-package com.example.android.camera2.lutin.fragments
+package com.example.android.camera2.basic.fragments
+
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.graphics.*
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.hardware.Camera.Parameters.FOCUS_MODE_FIXED
 import android.hardware.camera2.*
 import android.media.Image
 import android.media.ImageReader
@@ -13,7 +18,9 @@ import android.os.HandlerThread
 import android.util.Log
 import android.view.*
 import androidx.core.graphics.drawable.toDrawable
+import androidx.core.graphics.rotationMatrix
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
@@ -22,10 +29,10 @@ import com.example.android.camera.utils.AutoFitSurfaceView
 import com.example.android.camera.utils.OrientationLiveData
 import com.example.android.camera.utils.computeExifOrientation
 import com.example.android.camera.utils.getPreviewOutputSize
-import com.example.android.camera2.lutin.CameraActivity
-import com.luciocoro.lutin.R
+import com.example.android.camera2.basic.CameraActivity
+import com.example.android.camera2.basic.R
+import com.example.android.camera2.basic.CalibrationData
 import com.example.calibrarlongituddeonda.Autorotar
-import com.example.android.camera2.lutin.CalibrationData
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
@@ -37,10 +44,21 @@ import kotlin.math.*
 import kotlin.properties.Delegates
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraCharacteristics.*
-import android.hardware.camera2.params.RggbChannelVector
+import android.net.Uri
+import android.text.Layout
 import android.widget.*
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContentProviderCompat.requireContext
+import androidx.core.content.ContextCompat.startActivity
+import androidx.core.content.FileProvider
+import androidx.core.graphics.drawable.toAdaptiveIcon
+import androidx.core.graphics.red
 import androidx.core.view.isVisible
+//import kotlinx.android.synthetic.main.absorbancia_calib.*
+//import kotlinx.android.synthetic.main.fragment_camera.capture_button
+//import kotlinx.android.synthetic.main.fragment_medir_absorbancia_test.*
 import kotlinx.coroutines.*
+import kotlin.coroutines.CoroutineContext
 import java.io.*
 import java.lang.Math.pow
 import java.lang.Runnable
@@ -50,15 +68,22 @@ class MedirAbsorbanciaTest : Fragment() {
 
     /** AndroidX navigation arguments */
     private val args: MedirAbsorbanciaTestArgs by navArgs()
-    private lateinit var  myBitmap: Bitmap
-    private lateinit var  prueba: Bitmap
 
     // Variables para el sistema de calibración
     private var isCalibrationMode: Boolean = false
 
+    private lateinit var canvasParaEditar: Canvas //para enchular los bitmaps hay que hacer esto
+    private lateinit var poneleColor: Paint //para ponerle colores
+    private lateinit var  myBitmap: Bitmap
+    private lateinit var  prueba: Bitmap
+    private var n by Delegates.notNull<Int>()
+    private var m by Delegates.notNull<Int>()
     private var activarBotonContinuar : Boolean = false
 
     private val listaConMetrica = mutableListOf<Float>()
+    lateinit var listaFinalIntensidadesRed : MutableList<Int>
+    lateinit var listaFinalIntensidadesGreen : MutableList<Int>
+    lateinit var listaFinalIntensidadesBlue : MutableList<Int>
 
     /** Host's navigation controller */
     private val navController: NavController by lazy {
@@ -127,21 +152,22 @@ class MedirAbsorbanciaTest : Fragment() {
     lateinit var buffer : ByteBuffer
     lateinit var bytes : ByteArray
 
+    private var progreso : Int = 0
+    private var mostrarProgreso : Boolean = false
     private val testMode = false
 
-    private var fotoNro = 0 //Indice para guardar fotos
-    private var grisesSinMuestra = mutableListOf<MutableList<Float>>()
-    private var grisesConMuestra = mutableListOf<MutableList<Float>>()
-    private var grisLoopActual = mutableListOf<Float>()
 
     private var blueOrder1 = mutableListOf<Float>()
+    private lateinit var blueOrder1IndexList : IntArray
     private var blueOrder2 = mutableListOf<Float>()
 
     private var redOrder1 = mutableListOf<Float>()
+    private lateinit var redOrder1IndexList : IntArray
     private var redOrder2 = mutableListOf<Float>()
 
 
     private var greenOrder1 = mutableListOf<Float>()
+    private lateinit var greenOrder1IndexList : IntArray
     private var greenOrder2 = mutableListOf<Float>()
 
 
@@ -151,8 +177,10 @@ class MedirAbsorbanciaTest : Fragment() {
 
     private var blueX1 : Int = 0
 
+    private var modoMonocromatico = false
 
     private var previewExposureTime by Delegates.notNull<Long>()
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -170,6 +198,10 @@ class MedirAbsorbanciaTest : Fragment() {
 
         // Detectar si estamos en modo calibración - obtener del Bundle
         isCalibrationMode = arguments?.getBoolean("isCalibrationMode", false) ?: false
+
+        // Debug: Mostrar qué modo se detectó
+        android.util.Log.d("DEBUG_CALIBRACION", "isCalibrationMode detectado: $isCalibrationMode")
+        android.util.Log.d("DEBUG_CALIBRACION", "Bundle completo: ${arguments?.toString()}")
 
         // Cargar datos de calibración existentes
         CalibrationData.loadCalibrationData(requireContext())
@@ -192,48 +224,43 @@ class MedirAbsorbanciaTest : Fragment() {
         viewFinder.setAspectRatio(previewSize.width, previewSize.height)
         /**--------------------------------------**/
 
+        /** --------- Set layout orientation -----------**/
+        val layoutmedirabstest : View = view.findViewById(R.id.layoutmedirabstest)
+        relativeOrientation = OrientationLiveData(requireContext(), characteristics).apply {
+            observe(viewLifecycleOwner, Observer {
+                    orientation -> layoutmedirabstest.rotation = orientationFunction(orientation).toFloat()
+            })
+        }
         /**-------------Open camera and first preview session-------------**/
+        //var previewExposureTime = 12*1e6.toLong()
         previewExposureTime = exposureTime //tmax
-        openDevice(previewExposureTime,sensitivity, 1f/focalDistance*100f) // Modificación 06/05/24
+        openDevice(previewExposureTime,sensitivity, focalDistance) // Modificación 06/05/24
 
         /** --------- Botones -----------**/
         botonContinuar.setOnClickListener {
             if (activarBotonContinuar) {
-                val grisesSinMuestraMatrix = FloatMatrix(grisesSinMuestra)
-                val grisesConMuestraMatrix = FloatMatrix(grisesConMuestra)
-                Navigation.run {
-                    findNavController(requireActivity(), R.id.fragment_container).navigate(
-                        MedirAbsorbanciaTestDirections.actionMedirAbsorbanciaTestToCaptura(
-                            prueba,
-                            args.cameraId,args.pixelFormat,
-                            blueOrder1.toFloatArray(),
-                            redOrder1.toFloatArray(),
-                            greenOrder1.toFloatArray(),
-                            blueOrder2.toFloatArray(),
-                            redOrder2.toFloatArray(),
-                            greenOrder2.toFloatArray(),
-                            listaConMetrica.toFloatArray(),
-                            posicionEnXOrdenCero,
-                            blueX1,
-                            grisesSinMuestraMatrix,
-                            grisesConMuestraMatrix,
-                            args.numberOfPictures,args.exposureTime,args.sensitivity,
-                            args.focalDistance
-                        )
+                Navigation.findNavController(requireActivity(), R.id.fragment_container).navigate(
+                    MedirAbsorbanciaTestDirections.actionMedirAbsorbanciaTestToCaptura(
+                        prueba,args.cameraId,blueOrder1.toFloatArray(),
+                        redOrder1.toFloatArray(), greenOrder1.toFloatArray(),
+                            blueOrder2.toFloatArray(), redOrder2.toFloatArray(),
+                            greenOrder2.toFloatArray(),listaConMetrica.toFloatArray(),
+                            posicionEnXOrdenCero,blueX1
                     )
-                }
-            } else {
-                Toast.makeText(activity, "Tome las fotos primero", Toast.LENGTH_SHORT).show()
+                )
+            }
+            else {
+                Toast.makeText(activity,"Tome las fotos primero",Toast.LENGTH_SHORT).show()
             }
         }
 
         captureButton.setOnClickListener {
-            script(barraProgreso,textoProgreso,captureButton,view.findViewById(R.id.botonReanudar),exposureTime,numberOfPictures,sensitivity,focalDistance) // Modificación 06/05/24
+                script(barraProgreso,textoProgreso,captureButton,exposureTime,numberOfPictures,sensitivity,focalDistance) // Modificación 06/05/24
         }
 
     }
     // Modificación 06/05/24 :
-    private fun script(barraProgreso:ProgressBar,textoProgreso:TextView,captureButton : ImageButton,botonReanudar: ImageButton,exposureTime: Long,numberOfPictures: Int,sensitivity: Int, focalDistance: Float) = lifecycleScope.launch(Dispatchers.IO){
+    private fun script(barraProgreso:ProgressBar,textoProgreso:TextView,captureButton : ImageButton,exposureTime: Long,numberOfPictures: Int,sensitivity: Int, focalDistance: Float) = lifecycleScope.launch(Dispatchers.IO){
 
         withContext (Dispatchers.Main) {
             captureButton.isEnabled = false
@@ -264,6 +291,7 @@ class MedirAbsorbanciaTest : Fragment() {
         //val radioPromedios = 5f*h.toFloat()*w.toFloat()/12e6f
         val radioPromedios = 0
 
+
         /**--------------------------------------------------------------------------**/
         /** LÓGICA DE CALIBRACIÓN VS MODO NORMAL    **/
         /**--------------------------------------------------------------------------**/
@@ -278,20 +306,20 @@ class MedirAbsorbanciaTest : Fragment() {
             imageReader = ImageReader.newInstance(w, h, args.pixelFormat, 1)
 
             previewSession.close()
-            delay(100L)
-            makePreviewSession(exposureTime,sensitivity,focalDistanceCm)
-            delay(100L)
+            delay(500L)
+            makePreviewSession(exposureTime,sensitivity,focalDistance)
+            delay(500L)
             previewSession.close()
-            delay(100L)
+            delay(500L)
             picturesSession = createCaptureSession(camera, listOf(imageReader.surface), cameraHandler)
 
-            takePhoto(exposureTime,sensitivity,focalDistanceCm,picturesSession).use{ result ->
+            takePhoto(tmax,sensitivity,focalDistanceCm,picturesSession).use{ result ->
                 buffer = result.image.planes[0].buffer
                 bytes = ByteArray(buffer.remaining()).apply {buffer.get(this)}
                 myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                 result.image.close()
                 picturesSession.close()
-                makePreviewSession(exposureTime,sensitivity,focalDistanceCm)
+                makePreviewSession(exposureTime,sensitivity,focalDistance)
 
                 if (testMode==true) {
                     m = doubleArrayOf((h/2f).toDouble(),0.toDouble())
@@ -359,7 +387,7 @@ class MedirAbsorbanciaTest : Fragment() {
                             myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                             result.image.close()
                             picturesSession.close()
-                            makePreviewSession(previewExposureTime,sensitivity,focalDistanceCm)
+                            makePreviewSession(previewExposureTime,sensitivity,focalDistance)
 
                             for (n in 0 until listaXRectaAjuste.lastIndex) {
                                 var i0 = listaXRectaAjuste[n]
@@ -444,11 +472,11 @@ class MedirAbsorbanciaTest : Fragment() {
             // Crear bitmap de visualización con recta calibrada
             imageReader = ImageReader.newInstance(w, h, args.pixelFormat, 1)
             previewSession.close()
-            delay(100L)
-            makePreviewSession(exposureTime,sensitivity,focalDistanceCm)
-            delay(100L)
+            delay(500L)
+            makePreviewSession(exposureTime,sensitivity,focalDistance)
+            delay(500L)
             previewSession.close()
-            delay(100L)
+            delay(500L)
             picturesSession = createCaptureSession(camera, listOf(imageReader.surface), cameraHandler)
 
             takePhoto(exposureTime,sensitivity,focalDistanceCm,picturesSession).use{ result ->
@@ -457,7 +485,7 @@ class MedirAbsorbanciaTest : Fragment() {
                 myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                 result.image.close()
                 picturesSession.close()
-                makePreviewSession(exposureTime,sensitivity,focalDistanceCm)
+                makePreviewSession(exposureTime,sensitivity,focalDistance)
 
                 // Crear bitmap de prueba con recta calibrada
                 prueba = myBitmap.copy(myBitmap.getConfig(), true)
@@ -489,11 +517,62 @@ class MedirAbsorbanciaTest : Fragment() {
                 textoProgreso.text = "Generando posiciones\ncon calibración"
             }
 
-            // Usar un rango amplio para medir todo el patrón
-            val leftLimit = radioPromedios.toInt()
-            val rightLimit = (posicionEnXOrdenCero - 200).coerceAtMost(w - 50)
+            // *** MODIFICACIÓN: Medir toda la región del orden 1 incluyendo todos los colores ***
+            // El problema es que blueX1 solo marca la posición del pico azul, pero el rojo está más lejos
+            if (posicionEnXOrdenCero > 0 && blueX1 > 0) {
+                // Calcular la distancia entre orden 0 y primer orden (basado en azul)
+                val distanciaOrdenAzul = abs(posicionEnXOrdenCero - blueX1)
 
-            listaIndices = (leftLimit until rightLimit).toList()
+                // El espectro visible va aproximadamente de 380nm a 750nm
+                // El rojo (650-750nm) está más lejos del orden 0 que el azul (450-490nm)
+                // Expandir la región para incluir todo el espectro visible del orden 1
+
+                // Usar una región más amplia que cubra desde el violeta hasta el rojo
+                // El rojo puede estar hasta 1.6 veces más lejos que el azul del orden 0
+                val factorExpansion = 1.8f // Factor para asegurar que incluimos todo el rojo
+                val distanciaMaximaEspectro = (distanciaOrdenAzul * factorExpansion).toInt()
+
+                // La región del orden 1 va desde una posición cercana al orden 0 hasta el extremo rojo
+                val inicioOrden1 = maxOf(posicionEnXOrdenCero - (distanciaOrdenAzul * 0.3).toInt(), radioPromedios.toInt())
+                val finOrden1 = minOf(posicionEnXOrdenCero - distanciaMaximaEspectro, w - 50)
+
+                // Asegurar que el rango sea válido (inicioOrden1 > finOrden1 porque vamos hacia la izquierda)
+                if (inicioOrden1 > finOrden1) {
+                    listaIndices = (finOrden1 until inicioOrden1).toList()
+                } else {
+                    // Fallback: usar región centrada en blueX1 pero más amplia
+                    val anchoOrden1Amplio = (distanciaOrdenAzul * 1.5).toInt()
+                    val leftLimit = maxOf(blueX1 - anchoOrden1Amplio, radioPromedios.toInt())
+                    val rightLimit = minOf(posicionEnXOrdenCero - (distanciaOrdenAzul * 0.2).toInt(), w - 50)
+                    listaIndices = (leftLimit until rightLimit).toList()
+                }
+
+                android.util.Log.d("DEBUG_ORDEN1_COMPLETO", "Medición de todo el orden 1:")
+                android.util.Log.d("DEBUG_ORDEN1_COMPLETO", "Posición orden 0: $posicionEnXOrdenCero")
+                android.util.Log.d("DEBUG_ORDEN1_COMPLETO", "Posición pico azul (blueX1): $blueX1")
+                android.util.Log.d("DEBUG_ORDEN1_COMPLETO", "Distancia orden azul: $distanciaOrdenAzul")
+                android.util.Log.d("DEBUG_ORDEN1_COMPLETO", "Distancia máxima espectro: $distanciaMaximaEspectro")
+                android.util.Log.d("DEBUG_ORDEN1_COMPLETO", "Inicio orden 1: $inicioOrden1")
+                android.util.Log.d("DEBUG_ORDEN1_COMPLETO", "Fin orden 1: $finOrden1")
+                android.util.Log.d("DEBUG_ORDEN1_COMPLETO", "Rango final: ${listaIndices.first()} a ${listaIndices.last()}")
+                android.util.Log.d("DEBUG_ORDEN1_COMPLETO", "Total píxeles a medir: ${listaIndices.size}")
+            } else {
+                // Fallback: si no hay datos de calibración válidos, usar un rango amplio
+                val centroEstimado = w / 3 // Estimar el centro en el primer tercio de la imagen
+                val anchoFallback = w / 5 // Usar 20% del ancho como fallback (más amplio)
+                listaIndices = (centroEstimado - anchoFallback until centroEstimado + anchoFallback/2).toList()
+
+                android.util.Log.d("DEBUG_ORDEN1_COMPLETO", "Usando fallback amplio - datos de calibración no válidos")
+                android.util.Log.d("DEBUG_ORDEN1_COMPLETO", "Centro estimado: $centroEstimado")
+                android.util.Log.d("DEBUG_ORDEN1_COMPLETO", "Total píxeles a medir: ${listaIndices.size}")
+            }
+
+            // Debug: mostrar información del rango
+            android.util.Log.d("DEBUG_CALIBRACION", "Rango de medición:")
+            android.util.Log.d("DEBUG_CALIBRACION", "leftLimit: ${listaIndices.first()}")
+            android.util.Log.d("DEBUG_CALIBRACION", "rightLimit: ${listaIndices.last()}")
+            android.util.Log.d("DEBUG_CALIBRACION", "Total píxeles a medir: ${listaIndices.size}")
+            android.util.Log.d("DEBUG_CALIBRACION", "Ancho total imagen: $w")
 
             launch {
                 val metric = sqrt(1 + pow(m[1], 2.0))
@@ -503,9 +582,6 @@ class MedirAbsorbanciaTest : Fragment() {
             }
 
             var L = listaIndices.size
-            grisesSinMuestra = zerosMatrix(L, numberOfPictures)
-            grisesConMuestra = zerosMatrix(L, numberOfPictures)
-
             redOrder1 = zeros(L)
             greenOrder1 = zeros(L)
             blueOrder1 = zeros(L)
@@ -521,62 +597,53 @@ class MedirAbsorbanciaTest : Fragment() {
                 textoProgreso.text="Fotos en vacío"
             }
 
-            // Create a single optimized capture session for all photos
             previewSession.close()
-            delay(100L)
-            picturesSession = createOptimizedCaptureSession()
-
+            makePreviewSession(exposureTime,sensitivity,focalDistance)
+            delay(500L)
+            previewSession.close()
+            delay(500L)
             var progress = 0f
             repeat(numberOfPictures) {
-                takePhotoOptimized(exposureTime, sensitivity, focalDistanceCm).use { result ->
-                    // Process image on background thread
-                    async(Dispatchers.Default) {
-                        buffer = result.image.planes[0].buffer
-                        bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
-                        myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                        result.image.close()
+                picturesSession = createCaptureSession(camera, listOf(imageReader.surface), cameraHandler)
+                takePhoto(exposureTime, sensitivity, focalDistanceCm, picturesSession).use { result ->
+                    buffer = result.image.planes[0].buffer
+                    bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
+                    myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    result.image.close()
+                    picturesSession.close()
 
-                        grisLoopActual = zeros(L)
-
-                        for (n in listaIndices.indices) {
-                            val i0 = listaIndices[n]
-                            val j0 = (listaIndices[n] * m[1] + m[0]).toInt()
-                            var r = 0f
-                            var g = 0f
-                            var b = 0f
-                            for (i in i0 - radioPromedios..i0 + radioPromedios) {
-                                for (j in j0 - radioPromedios..j0 + radioPromedios) {
-                                    val aargb = myBitmap.getPixel(i, j)
-                                    r += Color.red(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
-                                    g += Color.green(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
-                                    b += Color.blue(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
-                                }
+                    for (n in listaIndices.indices) {
+                        var i0 = listaIndices[n].toInt()
+                        var j0 = (listaIndices[n] * m[1] + m[0]).toInt()
+                        var r = 0f
+                        var g = 0f
+                        var b = 0f
+                        for (i in i0 - radioPromedios.toInt()..i0 + radioPromedios.toInt()) {
+                            for (j in j0 - radioPromedios.toInt()..j0 + radioPromedios.toInt()) {
+                                var aargb = myBitmap.getPixel(i, j)
+                                r += Color.red(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
+                                g += Color.green(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
+                                b += Color.blue(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
                             }
-                            redOrder1[n] += r/255f/numberOfPictures.toFloat()
-                            greenOrder1[n] += g/255f/numberOfPictures.toFloat()
-                            blueOrder1[n] += b/255f/numberOfPictures.toFloat()
-
-                            grisLoopActual[n] = (r + g + b)/255f/3f
                         }
-                        grisesSinMuestra[fotoNro] = grisLoopActual
-                        fotoNro += 1
+                        redOrder1[n]+= r/255f/numberOfPictures.toFloat()
+                        greenOrder1[n]+= g/255f/numberOfPictures.toFloat()
+                        blueOrder1[n]+= b/255f/numberOfPictures.toFloat()
+                    }
 
-                        progress += 1f/numberOfPictures*100f
-                        withContext(Dispatchers.Main){
-                            textoProgreso.text="Progreso "+String.format("%.1f", progress)+"%"
-                        }
-                    }.await()
+                    progress+=1f/numberOfPictures*100f
+                    withContext(Dispatchers.Main){
+                        textoProgreso.text="Progreso "+String.format("%.1f", progress)+"%"
+                    }
                 }
             }
+            makePreviewSession(exposureTime,sensitivity,focalDistance)
 
             withContext(Dispatchers.Main){
                 textoProgreso.text="Poner muestra"
             }
 
-            // Wait for user to press botonReanudar instead of fixed delay
-            withContext(Dispatchers.Main) {
-                waitForResumeButton(botonReanudar)
-            }
+            delay(7000L)
 
             /**--------------------------------------------------------------------------**/
             /** Tomando fotos con muestra **/
@@ -586,53 +653,46 @@ class MedirAbsorbanciaTest : Fragment() {
                 textoProgreso.text="Foto con muestra"
             }
 
-            // Reuse the same optimized session (no need to recreate)
+            previewSession.close()
+
+            delay(500L)
             progress = 0f
-            fotoNro = 0
             repeat(numberOfPictures) {
-                takePhotoOptimized(exposureTime, sensitivity, focalDistanceCm).use { result ->
-                    // Process image on background thread
-                    async(Dispatchers.Default) {
-                        buffer = result.image.planes[0].buffer
-                        bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
-                        myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                        result.image.close()
+                picturesSession = createCaptureSession(camera, listOf(imageReader.surface), cameraHandler)
+                takePhoto(exposureTime, sensitivity, focalDistanceCm, picturesSession).use { result ->
+                    buffer = result.image.planes[0].buffer
+                    bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
+                    myBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    result.image.close()
+                    picturesSession.close()
 
-                        for (n in listaIndices.indices) {
-                            val i0 = listaIndices[n]
-                            val j0 = (listaIndices[n] * m[1] + m[0]).toInt()
-                            var r = 0f
-                            var g = 0f
-                            var b = 0f
-                            for (i in i0 - radioPromedios..i0 + radioPromedios) {
-                                for (j in j0 - radioPromedios..j0 + radioPromedios) {
-                                    val aargb = myBitmap.getPixel(i, j)
-                                    r += Color.red(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
-                                    g += Color.green(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
-                                    b += Color.blue(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
-                                }
+                    for (n in listaIndices.indices) {
+                        var i0 = listaIndices[n].toInt()
+                        var j0 = (listaIndices[n] * m[1] + m[0]).toInt()
+                        var r = 0f
+                        var g = 0f
+                        var b = 0f
+                        for (i in i0 - radioPromedios.toInt()..i0 + radioPromedios.toInt()) {
+                            for (j in j0 - radioPromedios.toInt()..j0 + radioPromedios.toInt()) {
+                                var aargb = myBitmap.getPixel(i, j)
+                                r += Color.red(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
+                                g += Color.green(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
+                                b += Color.blue(aargb).toFloat() / (2*radioPromedios + 1).toDouble().pow(2.0).toFloat()
                             }
-                            redOrder2[n] += r/255f/numberOfPictures.toFloat()
-                            greenOrder2[n] += g/255f/numberOfPictures.toFloat()
-                            blueOrder2[n] += b/255f/numberOfPictures.toFloat()
-
-                            grisLoopActual[n] = (r + g + b)/255f/3f
                         }
+                        redOrder2[n]+= r/255f/numberOfPictures.toFloat()
+                        greenOrder2[n]+= g/255f/numberOfPictures.toFloat()
+                        blueOrder2[n]+= b/255f/numberOfPictures.toFloat()
+                    }
 
-                        grisesConMuestra[fotoNro] = grisLoopActual
-                        fotoNro += 1
-
-                        progress += 1f/numberOfPictures*100f
-                        withContext(Dispatchers.Main){
-                            textoProgreso.text="Progreso "+String.format("%.1f", progress)+"%"
-                        }
-                    }.await()
+                    progress+=1f/numberOfPictures*100f
+                    withContext(Dispatchers.Main){
+                        textoProgreso.text="Progreso "+String.format("%.1f", progress)+"%"
+                    }
                 }
             }
 
-            // Close optimized session and return to preview
-            picturesSession.close()
-            makePreviewSession(previewExposureTime,sensitivity,focalDistanceCm)
+            makePreviewSession(previewExposureTime,sensitivity,focalDistance)
 
             withContext(Dispatchers.Main){
                 textoProgreso.isVisible = false
@@ -649,54 +709,26 @@ class MedirAbsorbanciaTest : Fragment() {
     @SuppressLint("MissingPermission")
     // Modificación 06/05/24 :
     private fun openDevice(exposureTime: Long, sensitivity: Int, focalDistance: Float) = lifecycleScope.launch(Dispatchers.Main) {
-        //
+    //
         camera = openCamera(cameraManager, args.cameraId, cameraHandler)
         previewSession = createCaptureSession(camera, listOf(viewFinder.holder.surface), cameraHandler)
         captureRequestPreview = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply { addTarget(viewFinder.holder.surface) }
 
-        // Fuerza modo completamente manual
-        configureManualMode(captureRequestPreview, exposureTime, sensitivity, focalDistance)
+        captureRequestPreview.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
+        captureRequestPreview.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
+        captureRequestPreview.set(CaptureRequest.BLACK_LEVEL_LOCK, true)
+        captureRequestPreview.set(CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE, CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE_OFF)
+        captureRequestPreview.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CONTROL_AE_ANTIBANDING_MODE_OFF)
+        captureRequestPreview.set(CaptureRequest.CONTROL_AWB_MODE, CONTROL_AWB_MODE_OFF)
+        captureRequestPreview.set(CaptureRequest.CONTROL_EFFECT_MODE, CONTROL_EFFECT_MODE_OFF)
+        captureRequestPreview.set(CaptureRequest.CONTROL_SCENE_MODE, CONTROL_SCENE_MODE_DISABLED)
+        captureRequestPreview.set(CaptureRequest.DISTORTION_CORRECTION_MODE, DISTORTION_CORRECTION_MODE_OFF)
+
+        captureRequestPreview.set(CaptureRequest.LENS_FOCUS_DISTANCE, 1f/focalDistance*100f)  // Modificación 06/05/24
+        captureRequestPreview.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime)
+        captureRequestPreview.set(CaptureRequest.SENSOR_SENSITIVITY, sensitivity)
         previewSession.setRepeatingRequest(captureRequestPreview.build(), null, cameraHandler)
 
-    }
-
-    /**
-     * Configure camera to fully manual mode with all automatic features disabled
-     */
-    private fun configureManualMode(
-        requestBuilder: CaptureRequest.Builder,
-        exposureTime: Long,
-        sensitivity: Int,
-        focalDistance: Float
-    ) {
-        requestBuilder.apply {
-            // Fuerza modo completamente manual - disable all automatic features
-            set(CaptureRequest.HOT_PIXEL_MODE, CaptureRequest.HOT_PIXEL_MODE_OFF)
-            set(CaptureRequest.TONEMAP_MODE, CaptureRequest.TONEMAP_MODE_FAST)
-            set(CaptureRequest.SHADING_MODE, CaptureRequest.SHADING_MODE_OFF)
-            set(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_OFF)
-            set(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_OFF)
-            set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_OFF)
-            set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_OFF)
-            set(CaptureRequest.COLOR_CORRECTION_MODE, CaptureRequest.COLOR_CORRECTION_MODE_TRANSFORM_MATRIX)
-            set(CaptureRequest.COLOR_CORRECTION_GAINS, RggbChannelVector(1f, 1f, 1f, 1f))
-            set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
-
-            set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
-            set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
-            set(CaptureRequest.BLACK_LEVEL_LOCK, true)
-            set(CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE, CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE_OFF)
-            set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CONTROL_AE_ANTIBANDING_MODE_OFF)
-            set(CaptureRequest.CONTROL_AWB_MODE, CONTROL_AWB_MODE_OFF)
-            set(CaptureRequest.CONTROL_EFFECT_MODE, CONTROL_EFFECT_MODE_OFF)
-            set(CaptureRequest.CONTROL_SCENE_MODE, CONTROL_SCENE_MODE_DISABLED)
-            set(CaptureRequest.DISTORTION_CORRECTION_MODE, DISTORTION_CORRECTION_MODE_OFF)
-
-            // Manual exposure, sensitivity and focus settings
-            set(CaptureRequest.LENS_FOCUS_DISTANCE, 1f/focalDistance*100f)
-            set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime)
-            set(CaptureRequest.SENSOR_SENSITIVITY, sensitivity)
-        }
     }
 
     @SuppressLint("MissingPermission")
@@ -730,14 +762,25 @@ class MedirAbsorbanciaTest : Fragment() {
     }
     // Modificación 06/05/24
     private suspend fun makePreviewSession(exposureTime: Long, sensitivity: Int, focalDistance: Float) = lifecycleScope.launch(Dispatchers.Main) {
-        //
+    //
         previewSession = createCaptureSession(camera, listOf(viewFinder.holder.surface), cameraHandler)
 
-        captureRequestPreview = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+        captureRequestPreview = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)  // HIZO UN CAMBIO ACA TEMPLATE_PREVIW A TEMPLATE_MANUAL
             .apply { addTarget(viewFinder.holder.surface) }
 
-        // Fuerza modo completamente manual
-        configureManualMode(captureRequestPreview, exposureTime, sensitivity, focalDistance)
+        captureRequestPreview.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
+        captureRequestPreview.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
+        captureRequestPreview.set(CaptureRequest.BLACK_LEVEL_LOCK, true)
+        captureRequestPreview.set(CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE, CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE_OFF)
+        captureRequestPreview.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CONTROL_AE_ANTIBANDING_MODE_OFF)
+        captureRequestPreview.set(CaptureRequest.CONTROL_AWB_MODE, CONTROL_AWB_MODE_OFF) // CAMBIE OFF A AUTO
+        captureRequestPreview.set(CaptureRequest.CONTROL_EFFECT_MODE, CONTROL_EFFECT_MODE_OFF)
+        captureRequestPreview.set(CaptureRequest.CONTROL_SCENE_MODE, CONTROL_SCENE_MODE_DISABLED)
+        captureRequestPreview.set(CaptureRequest.DISTORTION_CORRECTION_MODE, DISTORTION_CORRECTION_MODE_OFF)
+
+        captureRequestPreview.set(CaptureRequest.LENS_FOCUS_DISTANCE, 1f/focalDistance*100f) // Modificación 06/05/24
+        captureRequestPreview.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime)
+        captureRequestPreview.set(CaptureRequest.SENSOR_SENSITIVITY, sensitivity)
 
         previewSession.setRepeatingRequest(captureRequestPreview.build(), null, cameraHandler)
 
@@ -763,109 +806,33 @@ class MedirAbsorbanciaTest : Fragment() {
         }, handler)
     }
 
-    /**
-     * Create a single optimized capture session for taking multiple photos
-     */
-    private suspend fun createOptimizedCaptureSession(): CameraCaptureSession {
-        return createCaptureSession(camera, listOf(imageReader.surface), cameraHandler)
-    }
-
-    /**
-     * Optimized photo capture without session recreation
-     */
-    private suspend fun takePhotoOptimized(exposureTime: Long, sensitivity: Int, focusDistance: Float): CombinedCaptureResult = suspendCoroutine { cont ->
-        captureRequestStillCapture = camera.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE).apply {
-            addTarget(imageReader.surface)
-        }
-
-        // Configure manual mode
-        configureManualMode(captureRequestStillCapture, exposureTime, sensitivity, focusDistance)
-
-        // Flush any images left in the image reader
-        @Suppress("ControlFlowWithEmptyBody")
-        while (imageReader.acquireNextImage() != null) {}
-
-        // Start a new image queue
-        val imageQueue = ArrayBlockingQueue<Image>(IMAGE_BUFFER_SIZE)
-        imageReader.setOnImageAvailableListener({ reader ->
-            val image = reader.acquireNextImage()
-            imageQueue.add(image)
-        }, imageReaderHandler)
-
-        picturesSession.capture(captureRequestStillCapture.build(), object : CameraCaptureSession.CaptureCallback() {
-            override fun onCaptureStarted(
-                session: CameraCaptureSession,
-                request: CaptureRequest,
-                timestamp: Long,
-                frameNumber: Long) {
-                super.onCaptureStarted(session, request, timestamp, frameNumber)
-                viewFinder.post(animationTask)
-            }
-
-            override fun onCaptureCompleted(
-                session: CameraCaptureSession,
-                request: CaptureRequest,
-                result: TotalCaptureResult) {
-                super.onCaptureCompleted(session, request, result)
-                val resultTimestamp = result.get(CaptureResult.SENSOR_TIMESTAMP)
-                Log.d(TAG, "Capture result received: $resultTimestamp")
-
-                // Set a timeout in case image captured is dropped from the pipeline
-                val exc = TimeoutException("Image dequeuing took too long")
-                val timeoutRunnable = Runnable { cont.resumeWithException(exc) }
-                imageReaderHandler.postDelayed(timeoutRunnable, IMAGE_CAPTURE_TIMEOUT_MILLIS)
-
-                // Loop in the coroutine's context until an image with matching timestamp comes
-                @Suppress("BlockingMethodInNonBlockingContext")
-                lifecycleScope.launch(cont.context) {
-                    while (true) {
-                        // Dequeue images while timestamps don't match
-                        val image = imageQueue.take()
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-                            image.format != ImageFormat.DEPTH_JPEG &&
-                            image.timestamp != resultTimestamp) continue
-                        Log.d(TAG, "Matching image dequeued: ${image.timestamp}")
-
-                        // Unset the image reader listener
-                        imageReaderHandler.removeCallbacks(timeoutRunnable)
-                        imageReader.setOnImageAvailableListener(null, null)
-
-                        // Clear the queue of images, if there are left
-                        while (imageQueue.size > 0) {
-                            imageQueue.take().close()
-                        }
-
-                        // Compute EXIF orientation metadata
-                        val rotation = 0
-                        val mirrored = false
-                        val exifOrientation = computeExifOrientation(rotation, mirrored)
-
-                        // Build the result and resume progress
-                        cont.resume(CombinedCaptureResult(
-                            image, result, exifOrientation, imageReader.imageFormat))
-                        break
-                    }
-                }
-            }
-        }, cameraHandler)
-    }
-
     private suspend fun takePhoto(exposureTime: Long,sensitivity : Int, focusDistance: Float, session : CameraCaptureSession):
             CombinedCaptureResult = suspendCoroutine { cont ->
 
         captureRequestStillCapture = session.device.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE).apply {addTarget(imageReader.surface)}
 
-        // Fuerza modo completamente manual
-        configureManualMode(captureRequestStillCapture, exposureTime, sensitivity, focusDistance)
+        captureRequestStillCapture.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
+        captureRequestStillCapture.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
+        captureRequestStillCapture.set(CaptureRequest.BLACK_LEVEL_LOCK, true)
+        captureRequestStillCapture.set(CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE, CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE_OFF)
+        captureRequestStillCapture.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CONTROL_AE_ANTIBANDING_MODE_OFF)
+        captureRequestStillCapture.set(CaptureRequest.CONTROL_AWB_MODE, CONTROL_AWB_MODE_OFF)
+        captureRequestStillCapture.set(CaptureRequest.CONTROL_EFFECT_MODE, CONTROL_EFFECT_MODE_OFF)
+        captureRequestStillCapture.set(CaptureRequest.CONTROL_SCENE_MODE, CONTROL_SCENE_MODE_DISABLED)
+        captureRequestStillCapture.set(CaptureRequest.DISTORTION_CORRECTION_MODE, DISTORTION_CORRECTION_MODE_OFF)
+
+        captureRequestStillCapture.set(CaptureRequest.LENS_FOCUS_DISTANCE, focusDistance)
+        captureRequestStillCapture.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTime)
+        captureRequestStillCapture.set(CaptureRequest.SENSOR_SENSITIVITY, sensitivity)
 
         // Flush any images left in the image reader
         @Suppress("ControlFlowWithEmptyBody")
         while (imageReader.acquireNextImage() != null) {}
 
         // Start a new image queue
-        val imageQueue = ArrayBlockingQueue<Image>(IMAGE_BUFFER_SIZE)
+        var imageQueue = ArrayBlockingQueue<Image>(IMAGE_BUFFER_SIZE)
         imageReader.setOnImageAvailableListener({ reader ->
-            val image = reader.acquireNextImage()
+            var image = reader.acquireNextImage()
             imageQueue.add(image)
         }, imageReaderHandler)
 
@@ -885,12 +852,12 @@ class MedirAbsorbanciaTest : Fragment() {
                 request: CaptureRequest,
                 result: TotalCaptureResult) {
                 super.onCaptureCompleted(session, request, result)
-                val resultTimestamp = result.get(CaptureResult.SENSOR_TIMESTAMP)
+                var resultTimestamp = result.get(CaptureResult.SENSOR_TIMESTAMP)
                 Log.d(TAG, "Capture result received: $resultTimestamp")
 
                 // Set a timeout in case image captured is dropped from the pipeline
-                val exc = TimeoutException("Image dequeuing took too long")
-                val timeoutRunnable = Runnable { cont.resumeWithException(exc) }
+                var exc = TimeoutException("Image dequeuing took too long")
+                var timeoutRunnable = Runnable { cont.resumeWithException(exc) }
                 imageReaderHandler.postDelayed(timeoutRunnable, IMAGE_CAPTURE_TIMEOUT_MILLIS)
 
                 // Loop in the coroutine's context until an image with matching timestamp comes
@@ -900,7 +867,7 @@ class MedirAbsorbanciaTest : Fragment() {
                 lifecycleScope.launch(cont.context) {
                     while (true) {
                         // Dequeue images while timestamps don't match
-                        val image = imageQueue.take()
+                        var image = imageQueue.take()
                         // TODO(owahltinez): b/142011420
                         // if (image.timestamp != resultTimestamp) continue
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
@@ -919,11 +886,11 @@ class MedirAbsorbanciaTest : Fragment() {
 
                         // Compute EXIF orientation metadata
                         //val rotation = relativeOrientation.value ?: 0
-                        val rotation = 0
+                        var rotation = 0
                         //val mirrored = characteristics.get(CameraCharacteristics.LENS_FACING) ==
-                        CameraCharacteristics.LENS_FACING_FRONT
-                        val mirrored = false
-                        val exifOrientation = computeExifOrientation(rotation, mirrored)
+                                CameraCharacteristics.LENS_FACING_FRONT
+                        var mirrored = false
+                        var exifOrientation = computeExifOrientation(rotation, mirrored)
 
                         // Build the result and resume progress
                         cont.resume(CombinedCaptureResult(
@@ -936,22 +903,14 @@ class MedirAbsorbanciaTest : Fragment() {
     }
 
 
+
+
     override fun onStop() {
         super.onStop()
         try {
             camera.close()
         } catch (exc: Throwable) {
             Log.e(TAG, "Error closing camera", exc)
-        }
-    }
-
-    /** Wait for botonReanudar to be pressed, suspending coroutine until then */
-    private suspend fun waitForResumeButton(botonReanudar: ImageButton): Unit = suspendCoroutine { cont ->
-        botonReanudar.isVisible = true
-        botonReanudar.setOnClickListener {
-            botonReanudar.isVisible = false
-            botonReanudar.setOnClickListener(null)
-            cont.resume(Unit)
         }
     }
 
@@ -991,7 +950,50 @@ class MedirAbsorbanciaTest : Fragment() {
         }
     }
 
+
 }
+
+fun maxFinder(intensidades: IntArray) : List<Int> {
+    /** Declaracion de variables a utilizar */
+    var posicionesMaximos = ArrayList<Int>()
+    val intensidadesEnMaximos = mutableListOf<Int>()
+    val ancho = 100 // Ancho con el que defino que un punto es un maximo o minimo
+
+    for (i in ancho+1..intensidades.size - (ancho+1)) {
+        /** Si cumplen estas condiciones es un máximo */
+        if (intensidades[i] >= intensidades.sliceArray(i-ancho..i-1).maxOrNull()!! &&
+            intensidades[i] >= intensidades.sliceArray(i+1..i+ancho).maxOrNull()!! && intensidades[i] > 30) // antes 50
+        {
+
+            posicionesMaximos.add(i) // Adjunta la posicion del maximo al vector de maximos
+            intensidadesEnMaximos.add(intensidades[i])
+        }
+    }
+
+    val ordenCero = encontrarMaximo(intensidadesEnMaximos)[0]
+    var ordenUnoLista = encontrarOrdenUno(intensidadesEnMaximos,ordenCero)
+    var ordenUno = ordenUnoLista[0]
+    var posOrdenUno = posicionesMaximos[ordenUnoLista[1]]
+
+    return listOf(ordenUno,posOrdenUno)
+}
+
+fun firstIndexOf(xs : MutableList<Int>, x : Number ) : Number {
+    var n = 0
+    for (k in 0 until xs.lastIndex) {
+        if (xs[k].toFloat()<x.toFloat()){
+            continue
+        } else if (xs[k].toFloat()==x.toFloat()) {
+            n = k
+            break
+        } else {
+            n = k-1
+            break
+        }
+    }
+    return n
+}
+
 fun encontrarMaximo (xs : MutableList<Int>) : List<Int> {
     val l = xs.size
     if (l==0) {
@@ -1013,6 +1015,91 @@ fun encontrarMaximo (xs : MutableList<Int>) : List<Int> {
     }
 }
 
+fun encontrarMinimo (xs : MutableList<Int>) : List<Int> {
+    val l = xs.size
+    if (l==0) {
+        return listOf<Int>()
+    } else {
+        var x0 = xs[0]
+        var n = 0
+        if (l >= 2 ) {
+            for (k in 1..(l-1)) {
+                if (xs[k] >= x0) {
+                    continue
+                } else {
+                    x0 = xs[k]
+                    n = k
+                }
+            }
+        }
+        return listOf<Int>(x0,n)
+    }
+}
+
+fun encontrarOrdenUno (xs : MutableList<Int>, I : Int) : List<Int> {
+    val l = xs.size
+    if (l==0) {
+        return listOf<Int>()
+    } else {
+        var x0 = xs[0]
+        var n = 0
+        if (l >= 2 ) {
+            for (k in 1..(l-1)) {
+                if (xs[k] <= x0 || xs[k]>=I) {
+                    continue
+                } else {
+                    x0 = xs[k]
+                    n = k
+                }
+            }
+        }
+        return listOf<Int>(x0,n)
+    }
+}
+
+fun maxFinderPorIndice(intensidades: IntArray, j : Int, tol : Int) : List<Int> {
+    /** Declaracion de variables a utilizar */
+    var posicionesMaximos = ArrayList<Int>()
+    val intensidadesEnMaximos = mutableListOf<Int>()
+    val ancho = 100 // Ancho con el que defino que un punto es un maximo o minimo
+
+    for (i in ancho+1..intensidades.size - (ancho+1)) {
+        /** Si cumplen estas condiciones es un máximo */
+        if (intensidades[i] >= intensidades.sliceArray(i-ancho..i-1).maxOrNull()!! &&
+            intensidades[i] >= intensidades.sliceArray(i+1..i+ancho).maxOrNull()!! &&
+            abs(i-j)<=tol &&
+            intensidades[i] > 30) // antes 50
+        {
+            posicionesMaximos.add(i) // Adjunta la posicion del maximo al vector de maximos
+            intensidadesEnMaximos.add(intensidades[i])
+        }
+    }
+
+    var ordenUnoLista = encontrarMaximo(intensidadesEnMaximos)
+    var ordenUno = ordenUnoLista[0]
+    var posOrdenUno = posicionesMaximos[ordenUnoLista[1]]
+
+    return listOf(ordenUno,posOrdenUno)
+}
+
+fun orientationFunction (orientation : Int) : Int {
+    if (orientation == 0 || orientation == 90) {
+        return 0
+    } else {
+        return 180
+    }
+}
+
+fun doubleList(start : Int, final : Int) : MutableList<Double> {
+    val xs = mutableListOf<Double>()
+    var n0 = start.toDouble()
+    while (n0<=final){
+        xs.add(n0)
+        n0+=1.toDouble()
+    }
+    return xs
+}
+
 fun heavisideTheta (x : Number) : Float {
     var y = x.toFloat()
     if (y<0){
@@ -1022,15 +1109,27 @@ fun heavisideTheta (x : Number) : Float {
     }
 }
 
+fun calculateSD(numArray: DoubleArray): Double {
+    var sum = 0.0
+    var standardDeviation = 0.0
+
+    for (num in numArray) {
+        sum += num
+    }
+
+    val mean = sum / numArray.size
+
+    for (num in numArray) {
+        standardDeviation += Math.pow(num - mean, 2.0)
+    }
+
+    return Math.sqrt(standardDeviation / numArray.size)
+}
+
 fun zeros(n: Int) : MutableList<Float> {
     val xs : MutableList<Float> = mutableListOf()
     repeat(n){
         xs.add(0f)
     }
     return xs
-}
-
-fun zerosMatrix(nRows: Int, nCols: Int): MutableList<MutableList<Float>> {
-    require(nRows >= 0 && nCols >= 0) { "Dimensions must be non-negative" }
-    return MutableList(nCols) { MutableList(nRows) { 0f } }
 }

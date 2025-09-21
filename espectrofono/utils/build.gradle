@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 33
+        targetSdkVersion 30
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
@@ -51,7 +51,6 @@ android {
     viewBinding {
         enabled = true
     }
-    namespace 'com.example.android.camera.utils'
 }
 
 dependencies {

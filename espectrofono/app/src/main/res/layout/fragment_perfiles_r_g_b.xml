@@ -2,32 +2,33 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:importantForAccessibility="yes"
+    tools:context=".CameraActivity"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:importantForAccessibility="yes"
-    tools:context=".CameraActivity">
+    >
 
     <com.jjoe64.graphview.GraphView
         android:id="@+id/graph"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.6"
+        app:layout_constraintWidth_percent="0.9"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHeight_percent="0.6"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.1"
-        app:layout_constraintWidth_percent="0.9" />
+        app:layout_constraintVertical_bias="0.1" />
 
     <Switch
         android:id="@+id/switchRojo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
         android:text="@string/canal_rojo"
-        app:layout_constraintBottom_toTopOf="@id/switchVerde"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/graph"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/switchVerde"
+        android:layout_marginStart="20dp"
         tools:ignore="UseSwitchCompatOrMaterialXml" />
 
     <Switch
@@ -35,9 +36,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/canal_verde"
-        app:layout_constraintBottom_toTopOf="@id/switchAzul"
-        app:layout_constraintStart_toStartOf="@id/switchRojo"
         app:layout_constraintTop_toBottomOf="@id/switchRojo"
+        app:layout_constraintStart_toStartOf="@id/switchRojo"
+        app:layout_constraintBottom_toTopOf="@id/switchAzul"
         tools:ignore="UseSwitchCompatOrMaterialXml" />
 
     <Switch
@@ -45,72 +46,46 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/canal_azul"
-        app:layout_constraintBottom_toTopOf="@id/switchGris"
-        app:layout_constraintStart_toStartOf="@id/switchRojo"
         app:layout_constraintTop_toBottomOf="@id/switchVerde"
+        app:layout_constraintStart_toStartOf="@id/switchRojo"
+        app:layout_constraintBottom_toTopOf="@id/switchGris"
         tools:ignore="HardcodedText,UseSwitchCompatOrMaterialXml" />
 
     <Switch
         android:id="@+id/switchGris"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="50dp"
         android:text="@string/grises"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="@id/switchRojo"
         app:layout_constraintTop_toBottomOf="@id/switchAzul"
+        app:layout_constraintStart_toStartOf="@id/switchRojo"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="50dp"
         tools:ignore="HardcodedText,UseSwitchCompatOrMaterialXml" />
 
     <ImageButton
         android:id="@+id/exportarDatos"
         android:layout_width="75dp"
         android:layout_height="75dp"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="20dp"
         android:backgroundTint="#00FFFFFF"
         android:padding="0dp"
         android:scaleType="fitCenter"
         app:layout_constraintBottom_toTopOf="@id/botonContinuar"
         app:layout_constraintEnd_toEndOf="@id/botonContinuar"
-        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="@id/botonContinuar"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.972"
-        app:srcCompat="@drawable/guardar" />
-
-    <ImageButton
-        android:id="@+id/exportarGrises"
-        android:layout_width="75dp"
-        android:layout_height="75dp"
-        android:layout_marginEnd="36dp"
-        android:backgroundTint="#88888888"
-        android:padding="0dp"
-        android:scaleType="fitCenter"
-        app:layout_constraintBottom_toBottomOf="@+id/botonContinuar"
-        app:layout_constraintEnd_toStartOf="@+id/botonContinuar"
-        app:srcCompat="@drawable/guardar" />
+        app:srcCompat="@drawable/guardar"
+         />
 
     <ImageButton
         android:id="@+id/botonContinuar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="48dp"
+        app:srcCompat="@drawable/green_arrow_right_svg"
         android:backgroundTint="#00FFFFFF"
         app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="50dp"
+        android:layout_marginEnd="10dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@drawable/back_arrow" />
-
-    <ImageButton
-        android:id="@+id/toFigures"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="168dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/exportarDatos"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.763"
-        app:srcCompat="@drawable/baseline_auto_graph_24" />
+        />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

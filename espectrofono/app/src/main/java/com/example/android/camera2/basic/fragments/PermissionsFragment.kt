@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package com.example.android.camera2.lutin.fragments
+package com.example.android.camera2.basic.fragments
 
 import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.Navigation
-import com.luciocoro.lutin.R
+import com.example.android.camera2.basic.R
 
 /**
  * Este [Fragment] solicita el permiso de uso de cámara y, una vez otorgado, continúa

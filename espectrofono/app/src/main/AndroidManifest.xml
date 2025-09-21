@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.example.android.camera2.basic">
 
     <!-- Permission declarations -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -20,12 +21,9 @@
         tools:ignore="GoogleAppIndexingWarning">
 
         <activity
-            android:name="com.example.android.camera2.lutin.CameraActivity"
+            android:name="com.example.android.camera2.basic.CameraActivity"
             android:clearTaskOnLaunch="true"
-            android:theme="@style/AppTheme"
-            android:screenOrientation="fullSensor"
-            android:configChanges="orientation|screenSize|screenLayout|uiMode"
-            android:exported="true">
+            android:theme="@style/AppTheme">
 
             <!-- Main app intent filter -->
             <intent-filter>
@@ -35,7 +33,7 @@
 
         </activity>
         <provider
-            android:authorities="com.luciocoro.lutin.fileprovider"
+            android:authorities="com.example.android.camera2.basic.fileprovider"
             android:name="androidx.core.content.FileProvider"
             android:grantUriPermissions="true"
             android:exported="false">
@@ -43,7 +41,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths"/>
         </provider>
-
     </application>
 
 </manifest>

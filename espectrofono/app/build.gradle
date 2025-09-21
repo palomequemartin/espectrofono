@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
 apply plugin: 'kotlin-parcelize'
 apply plugin: "androidx.navigation.safeargs"
 
@@ -7,19 +8,15 @@ android {
     compileSdkVersion 33
     defaultConfig {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        applicationId "com.luciocoro.lutin"
-        minSdkVersion 33 //09/06/25 lo cambie a 24 para que JDSP pueda ser usado
-        targetSdkVersion 33
+        applicationId "com.android.example.camera2.basic"
+        minSdkVersion 21
+        targetSdkVersion 30
         versionCode 1
         versionName "1.0.0"
         renderscriptTargetApi 29
         renderscriptSupportModeEnabled true
     }
-    packagingOptions {
-        resources {
-            excludes += ['META-INF/DEPENDENCIES','META-INF/LICENSE.md','META-INF/LICENSE-notice.md']
-        }
-    }
+
     compileOptions {
         sourceCompatibility rootProject.ext.java_version
         targetCompatibility rootProject.ext.java_version
@@ -43,20 +40,12 @@ android {
     viewBinding {
         enabled = true
     }
-    namespace 'com.luciocoro.lutin'
 }
 
 dependencies {
     implementation project(':utils')
-    //JDSP, libreria para encontrar picos
-    implementation("com.github.psambit9791:jdsp:3.1.0"){
-        exclude group: 'org.apache.maven.surefire', module: 'common-java5'
-        exclude group: 'org.apache.maven.surefire', module: 'surefire-api'
-    }
 
-    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
 
-    implementation "androidx.core:core:1.9.0"
     // Kotlin lang
     implementation 'androidx.core:core-ktx:1.10.1'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.21"
@@ -84,6 +73,7 @@ dependencies {
 
     // Glide
     implementation 'com.github.bumptech.glide:glide:4.12.0'
+    kapt 'com.github.bumptech.glide:compiler:4.12.0'
 
     // Unit testing
     testImplementation 'androidx.test.ext:junit:1.1.5'

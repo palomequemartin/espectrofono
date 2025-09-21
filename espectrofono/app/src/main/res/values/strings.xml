@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <resources>
-    <string name="app_name">LUTIN</string>
-
+    <string name="app_name">Espectrometro</string>
     <string name="capture">Capture</string>
-    <string name="continuar">Continue</string>
     <string name="btn_absorbancia">Medir absorbancia</string>
     <string name="btn_espectro">Medir espectro</string>
     <string name="btn_medicion">Realizar Medición</string>

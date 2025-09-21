@@ -3,13 +3,12 @@
 <navigation
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
     app:startDestination="@id/permissions_fragment">
 
     <fragment
         android:id="@+id/permissions_fragment"
-        android:name="com.example.android.camera2.lutin.fragments.PermissionsFragment"
+        android:name="com.example.android.camera2.basic.fragments.PermissionsFragment"
         android:label="Permissions" >
 
         <action
@@ -22,7 +21,7 @@
 
     <fragment
         android:id="@+id/selector_fragment"
-        android:name="com.example.android.camera2.lutin.fragments.SelectorFragment"
+        android:name="com.example.android.camera2.basic.fragments.SelectorFragment"
         android:label="Selector" >
         <action
             android:id="@+id/action_selector_fragment_to_menuFragment"
@@ -32,7 +31,7 @@
 
     <fragment
         android:id="@+id/camera_fragment"
-        android:name="com.example.android.camera2.lutin.fragments.CameraFragment"
+        android:name="com.example.android.camera2.basic.fragments.CameraFragment"
         android:label="Camera" >
 
         <argument
@@ -80,7 +79,7 @@
     </fragment>
     <fragment
         android:id="@+id/menuFragment"
-        android:name="com.example.android.camera2.lutin.fragments.MenuFragment"
+        android:name="com.example.android.camera2.basic.fragments.MenuFragment"
         android:label="MenuFragment" >
         <argument
             android:name="camera_id"
@@ -101,7 +100,7 @@
 
     <fragment
         android:id="@+id/imagenEspectroFragment"
-        android:name="com.example.android.camera2.lutin.fragments.ImagenEspectroFragment"
+        android:name="com.example.android.camera2.basic.fragments.ImagenEspectroFragment"
         android:label="ImagenEspectroFragment" >
         <argument
             android:name="datosX"
@@ -127,7 +126,7 @@
 
     <fragment
         android:id="@+id/MedirAbsorbanciaTest"
-        android:name="com.example.android.camera2.lutin.fragments.MedirAbsorbanciaTest"
+        android:name="com.example.android.camera2.basic.fragments.MedirAbsorbanciaTest"
         android:label="Selector" >
         <argument
             android:name="camera_id"
@@ -159,7 +158,12 @@
             app:argType="float"
             app:nullable="false"
             />
-
+        <argument
+            android:name="isCalibrationMode"
+            app:argType="boolean"
+            app:nullable="false"
+            android:defaultValue="false"
+            />
         <action
             android:id="@+id/actionMedirAbsorbanciaTestToCaptura"
             app:destination="@id/captura" />
@@ -167,7 +171,7 @@
 
     <fragment
         android:id="@+id/captura"
-        android:name="com.example.android.camera2.lutin.fragments.captura"
+        android:name="com.example.android.camera2.basic.fragments.captura"
         android:label="Selector" >
         <argument
             android:name="bitmap"
@@ -180,11 +184,6 @@
             app:nullable="false"
             />
         <argument
-            android:name="pixel_format"
-            app:argType="integer"
-            app:nullable="false"
-            />
-        <argument
             android:name="blueOrder1"
             app:argType="float[]"
             app:nullable="false"
@@ -229,48 +228,15 @@
             app:argType="integer"
             app:nullable="false"
             />
-        <argument
-            android:name="grisesSinMuestra"
-            app:argType="com.example.android.camera2.lutin.fragments.FloatMatrix"
-            app:nullable="false" />
-
-        <argument
-            android:name="grisesConMuestra"
-            app:argType="com.example.android.camera2.lutin.fragments.FloatMatrix"
-            app:nullable="false" />
-        <argument
-            android:name="numberOfPictures"
-            app:argType="integer"
-            app:nullable="false"
-            />
-        <argument
-            android:name="exposureTime"
-            app:argType="long"
-            app:nullable="false"
-            />
-        <argument
-            android:name="sensitivity"
-            app:argType="integer"
-            app:nullable="false"
-            />
-        <argument
-            android:name="focalDistance"
-            app:argType="float"
-            app:nullable="false"
-            />
         <action
             android:id="@+id/actionCapturaToPerfiles"
             app:destination="@id/perfiles"
             />
-        <action
-            android:id="@+id/action_captura_to_MedirAbsorbanciaTest"
-            app:destination="@id/MedirAbsorbanciaTest"/>
-
     </fragment>
 
     <fragment
         android:id="@+id/perfiles"
-        android:name="com.example.android.camera2.lutin.fragments.PerfilesRGB"
+        android:name="com.example.android.camera2.basic.fragments.PerfilesRGB"
         android:label="Selector" >
 
 
@@ -299,16 +265,6 @@
             />
 
         <argument
-            android:name="grisesSinMuestra"
-            app:argType="com.example.android.camera2.lutin.fragments.FloatMatrix"
-            app:nullable="false" />
-
-        <argument
-            android:name="grisesConMuestra"
-            app:argType="com.example.android.camera2.lutin.fragments.FloatMatrix"
-            app:nullable="false" />
-
-        <argument
             android:name="blueOrder2"
             app:argType="float[]"
             app:nullable="false"
@@ -343,136 +299,9 @@
             app:argType="integer"
             app:nullable="false"
             />
-        <action
-            android:id="@+id/action_perfiles_to_menuFragment"
-            app:destination="@id/menuFragment" />
-        <argument
-            android:name="numberOfPictures"
-            app:argType="integer"
-            app:nullable="false"
-            />
-        <argument
-            android:name="exposureTime"
-            app:argType="long"
-            app:nullable="false"
-            />
-        <argument
-            android:name="sensitivity"
-            app:argType="integer"
-            app:nullable="false"
-            />
-        <argument
-            android:name="focalDistance"
-            app:argType="float"
-            app:nullable="false"
-            />
-
-        <action
-            android:id="@+id/action_perfiles_to_figuresFragment"
-            app:destination="@id/figuresFragment"
-            app:popUpTo="@id/perfiles"
-            app:popUpToInclusive="false" />
-
-
 
     </fragment>
 
-    <fragment
-        android:id="@+id/figuresFragment"
-        android:name="com.example.android.camera2.lutin.fragments.FiguresFragment"
-        tools:layout="@layout/figures_fragment">
-        <argument
-            android:name="camera_id"
-            app:argType="string"
-            app:nullable="false"
-            />
 
-        <argument
-            android:name="blueOrder1"
-            app:argType="float[]"
-            app:nullable="false"
-            />
-
-        <argument
-            android:name="redOrder1"
-            app:argType="float[]"
-            app:nullable="false"
-            />
-
-        <argument
-            android:name="greenOrder1"
-            app:argType="float[]"
-            app:nullable="false"
-            />
-
-        <argument
-            android:name="grisesSinMuestra"
-            app:argType="com.example.android.camera2.lutin.fragments.FloatMatrix"
-            app:nullable="false" />
-
-        <argument
-            android:name="grisesConMuestra"
-            app:argType="com.example.android.camera2.lutin.fragments.FloatMatrix"
-            app:nullable="false" />
-
-        <argument
-            android:name="blueOrder2"
-            app:argType="float[]"
-            app:nullable="false"
-            />
-
-        <argument
-            android:name="redOrder2"
-            app:argType="float[]"
-            app:nullable="false"
-            />
-
-        <argument
-            android:name="greenOrder2"
-            app:argType="float[]"
-            app:nullable="false"
-            />
-
-        <argument
-            android:name="listaIndices"
-            app:argType="float[]"
-            app:nullable="false"
-            />
-
-        <argument
-            android:name="posicionEnXOrden0"
-            app:argType="integer"
-            app:nullable="false"
-            />
-
-        <argument
-            android:name="posicionEnXMaxBlue1"
-            app:argType="integer"
-            app:nullable="false"
-            />
-        <argument
-            android:name="numberOfPictures"
-            app:argType="integer"
-            app:nullable="false"
-            />
-        <argument
-            android:name="exposureTime"
-            app:argType="long"
-            app:nullable="false"
-            />
-        <argument
-            android:name="sensitivity"
-            app:argType="integer"
-            app:nullable="false"
-            />
-        <argument
-            android:name="focalDistance"
-            app:argType="float"
-            app:nullable="false"
-            />
-        <action
-            android:id="@+id/action_figuresFragment_to_perfiles"
-            app:destination="@id/perfiles" />
-    </fragment>
 
 </navigation>

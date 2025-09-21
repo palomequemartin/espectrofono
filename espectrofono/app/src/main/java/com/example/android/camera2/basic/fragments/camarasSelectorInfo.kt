@@ -1,11 +1,11 @@
-package com.example.android.camera2.lutin.fragments
+package com.example.android.camera2.basic.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
-import com.luciocoro.lutin.R
+import com.example.android.camera2.basic.R
 
 class camarasSelectorInfo: DialogFragment() {
 
